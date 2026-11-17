@@ -1,0 +1,560 @@
+{
+ "updated": "2026-11-17",
+ "athlete": {
+  "bodyweight": 71,
+  "goal": "One-arm hang on the 20mm"
+ },
+ "targets": {
+  "Finger": 1,
+  "Board": 1,
+  "Pull": 1,
+  "Weakness": 1,
+  "Stretching": 3
+ },
+ "sessions": [
+  {
+   "date": "2025-09-29",
+   "type": "Board",
+   "title": "MoonBoard benchmarks",
+   "readiness": null,
+   "details": "8 problems, 8 completed, 14 tries"
+  },
+  {
+   "date": "2025-12-27",
+   "type": "Board",
+   "title": "MoonBoard benchmarks",
+   "readiness": null,
+   "details": "5 problems, 5 completed, 9 tries"
+  },
+  {
+   "date": "2026-03-26",
+   "type": "Board",
+   "title": "MoonBoard benchmarks",
+   "readiness": null,
+   "details": "4 problems, 4 completed, 13 tries"
+  },
+  {
+   "date": "2026-05-17",
+   "type": "Board",
+   "title": "MoonBoard benchmarks",
+   "readiness": null,
+   "details": "5 problems, 5 completed, 6 tries"
+  },
+  {
+   "date": "2026-09-10",
+   "type": "Board",
+   "title": "MoonBoard benchmarks",
+   "readiness": null,
+   "details": "7 problems, 7 completed, 11 tries"
+  },
+  {
+   "date": "2026-09-18",
+   "type": "Board",
+   "title": "MoonBoard benchmarks",
+   "readiness": null,
+   "details": "6 problems, 6 completed, 13 tries"
+  },
+  {
+   "date": "2026-10-02",
+   "type": "Board",
+   "title": "MoonBoard benchmarks",
+   "readiness": null,
+   "details": "Red Curry, Harvey Climbs Hard, Squiggly Boulder, Another Day, Blue Nun (5 problems, 5 completed, 7 tries)"
+  },
+  {
+   "date": "2026-11-05",
+   "type": "Board",
+   "title": "Tension: Wooden RiNo",
+   "readiness": null,
+   "details": "Wooden RiNo 7a/V6, 3 attempts"
+  },
+  {
+   "date": "2026-11-17",
+   "type": "Board",
+   "title": "1 v7 complete at 40",
+   "readiness": 3,
+   "details": ""
+  },
+  {
+   "date": "2026-11-17",
+   "type": "Stretching",
+   "title": "Stretching",
+   "readiness": 2,
+   "details": ""
+  }
+ ],
+ "lists": [
+  {
+   "id": "tension-1",
+   "name": "Tension 1",
+   "order": 1,
+   "building": false,
+   "promote": true,
+   "climbs": [
+    {
+     "name": "safety spray",
+     "grade": "6c+/V5",
+     "sent": false,
+     "dateSent": null,
+     "tries": null,
+     "note": ""
+    },
+    {
+     "name": "not a move",
+     "grade": "6c+/V5",
+     "sent": false,
+     "dateSent": null,
+     "tries": null,
+     "note": ""
+    },
+    {
+     "name": "Ants! Everywhere! Ants!",
+     "grade": "7a/V6",
+     "sent": true,
+     "dateSent": null,
+     "tries": null,
+     "note": "Check mark in the app"
+    },
+    {
+     "name": "Tinkering Around",
+     "grade": "7a/V6",
+     "sent": false,
+     "dateSent": null,
+     "tries": null,
+     "note": ""
+    },
+    {
+     "name": "Tunnel Music",
+     "grade": "7a+/V7",
+     "sent": false,
+     "dateSent": null,
+     "tries": null,
+     "note": ""
+    },
+    {
+     "name": "Catch me if you can 2",
+     "grade": "7a+/V7",
+     "sent": false,
+     "dateSent": null,
+     "tries": null,
+     "note": ""
+    },
+    {
+     "name": "dang!",
+     "grade": "7a+/V7",
+     "sent": false,
+     "dateSent": null,
+     "tries": null,
+     "note": ""
+    },
+    {
+     "name": "Bod Light",
+     "grade": "7b/V8",
+     "sent": false,
+     "dateSent": null,
+     "tries": null,
+     "note": ""
+    },
+    {
+     "name": "Captain Jack Sparrow",
+     "grade": "7b/V8",
+     "sent": false,
+     "dateSent": null,
+     "tries": null,
+     "note": ""
+    }
+   ]
+  },
+  {
+   "id": "tension-2",
+   "name": "Tension 2",
+   "order": 2,
+   "building": true,
+   "promote": true,
+   "climbs": [
+    {
+     "name": "eeeeblap!",
+     "grade": "7a/V6",
+     "sent": false,
+     "dateSent": null,
+     "tries": null,
+     "note": ""
+    },
+    {
+     "name": "Sorry I'm Late",
+     "grade": "7a+/V7",
+     "sent": false,
+     "dateSent": null,
+     "tries": null,
+     "note": ""
+    },
+    {
+     "name": "sick bored ver.2",
+     "grade": "7b/V8",
+     "sent": false,
+     "dateSent": null,
+     "tries": null,
+     "note": ""
+    },
+    {
+     "name": "Space Between V8",
+     "grade": "7b/V8",
+     "sent": false,
+     "dateSent": null,
+     "tries": null,
+     "note": ""
+    }
+   ]
+  },
+  {
+   "id": "tension-3",
+   "name": "Tension 3",
+   "order": 3,
+   "building": false,
+   "promote": false,
+   "climbs": [
+    {
+     "name": "Groovy",
+     "grade": "7b/V8",
+     "sent": false,
+     "dateSent": null,
+     "tries": null,
+     "note": ""
+    },
+    {
+     "name": "Pulse Modulation",
+     "grade": "7a/V6",
+     "sent": false,
+     "dateSent": null,
+     "tries": null,
+     "note": ""
+    }
+   ]
+  },
+  {
+   "id": "warm-up",
+   "name": "Warm-up",
+   "order": 4,
+   "building": false,
+   "promote": false,
+   "climbs": [
+    {
+     "name": "Pizza Box",
+     "grade": "6a/V3",
+     "sent": false,
+     "dateSent": null,
+     "tries": null,
+     "note": ""
+    },
+    {
+     "name": "Lost Glove",
+     "grade": "6b/V4",
+     "sent": false,
+     "dateSent": null,
+     "tries": null,
+     "note": ""
+    },
+    {
+     "name": "Frictionless",
+     "grade": "6c/V5",
+     "sent": false,
+     "dateSent": null,
+     "tries": null,
+     "note": ""
+    },
+    {
+     "name": "Turning Black And White",
+     "grade": "7a/V6",
+     "sent": false,
+     "dateSent": null,
+     "tries": null,
+     "note": "List note: couldnt do 7a"
+    }
+   ]
+  },
+  {
+   "id": "moonboard",
+   "name": "MoonBoard",
+   "order": 5,
+   "building": false,
+   "promote": false,
+   "climbs": [
+    {
+     "name": "Bluebird",
+     "grade": "7A/V6",
+     "sent": false,
+     "dateSent": null,
+     "tries": null,
+     "note": ""
+    },
+    {
+     "name": "Birch Please",
+     "grade": "7A/V6",
+     "sent": false,
+     "dateSent": null,
+     "tries": null,
+     "note": ""
+    },
+    {
+     "name": "The Long Shortcut",
+     "grade": "7A/V6",
+     "sent": true,
+     "dateSent": null,
+     "tries": 1,
+     "note": "Flashed"
+    },
+    {
+     "name": "Bolda",
+     "grade": "7A+/V7",
+     "sent": false,
+     "dateSent": null,
+     "tries": null,
+     "note": "Setter grade 7B/V8"
+    },
+    {
+     "name": "Yippee Ki Yay",
+     "grade": "7A+/V7",
+     "sent": true,
+     "dateSent": null,
+     "tries": 8,
+     "note": ""
+    },
+    {
+     "name": "Planck's Constant",
+     "grade": "7A+/V7",
+     "sent": false,
+     "dateSent": null,
+     "tries": null,
+     "note": ""
+    },
+    {
+     "name": "Heartbeat",
+     "grade": "7B/V8",
+     "sent": false,
+     "dateSent": null,
+     "tries": null,
+     "note": ""
+    },
+    {
+     "name": "Übermensch",
+     "grade": "7B/V8",
+     "sent": false,
+     "dateSent": null,
+     "tries": null,
+     "note": ""
+    },
+    {
+     "name": "Revé de Papi",
+     "grade": "7B/V8",
+     "sent": false,
+     "dateSent": null,
+     "tries": null,
+     "note": "No kickboard"
+    },
+    {
+     "name": "Night Raiders",
+     "grade": "7B+/V8",
+     "sent": false,
+     "dateSent": null,
+     "tries": null,
+     "note": ""
+    },
+    {
+     "name": "Broad Strokes",
+     "grade": "7B+/V8",
+     "sent": false,
+     "dateSent": null,
+     "tries": null,
+     "note": ""
+    }
+   ]
+  }
+ ],
+ "strength": [
+  {
+   "date": "2025-06-03",
+   "time": null,
+   "type": "20mm half crimp",
+   "right": 61.52,
+   "left": 59.62,
+   "body": null,
+   "note": ""
+  },
+  {
+   "date": "2025-08-08",
+   "time": "11:20",
+   "type": "20mm half crimp",
+   "right": 66.7,
+   "left": 60.38,
+   "body": null,
+   "note": ""
+  },
+  {
+   "date": "2025-08-08",
+   "time": "11:36",
+   "type": "20mm half crimp",
+   "right": 64.81,
+   "left": 59.98,
+   "body": null,
+   "note": ""
+  },
+  {
+   "date": "2025-08-09",
+   "time": null,
+   "type": "20mm half crimp",
+   "right": 66.39,
+   "left": 49.44,
+   "body": null,
+   "note": ""
+  },
+  {
+   "date": "2025-09-26",
+   "time": null,
+   "type": "20mm half crimp",
+   "right": 68.46,
+   "left": 63.55,
+   "body": null,
+   "note": ""
+  },
+  {
+   "date": "2026-02-07",
+   "time": null,
+   "type": "20mm half crimp",
+   "right": 58.57,
+   "left": 54.28,
+   "body": null,
+   "note": "18/02"
+  },
+  {
+   "date": "2026-09-10",
+   "time": "10:36",
+   "type": "20mm half crimp",
+   "right": 59.57,
+   "left": 54.73,
+   "body": null,
+   "note": "summer break"
+  },
+  {
+   "date": "2026-09-10",
+   "time": "22:27",
+   "type": "20mm half crimp",
+   "right": 60.56,
+   "left": 50.23,
+   "body": null,
+   "note": ""
+  },
+  {
+   "date": "2026-09-29",
+   "time": null,
+   "type": "20mm half crimp",
+   "right": 63.15,
+   "left": 59.18,
+   "body": null,
+   "note": "post holi"
+  },
+  {
+   "date": "2026-10-31",
+   "time": null,
+   "type": "20mm half crimp",
+   "right": 64.73,
+   "left": 59.73,
+   "body": 71,
+   "note": "very sick"
+  },
+  {
+   "date": "2025-06-07",
+   "time": null,
+   "type": "Pinch block",
+   "right": 22.2205906,
+   "left": 22.2578316,
+   "body": null,
+   "note": "One-hand pinch block max"
+  }
+ ],
+ "plan": [
+  {
+   "session": "Finger",
+   "what": "20mm half-crimp max hangs and one-arm progressions, left hand first. Two weeks in three; the third week is open-hand drag and repeaters, submaximal.",
+   "load": "Fingers: high",
+   "spacing": "At least 2 days from Board"
+  },
+  {
+   "session": "Board",
+   "what": "Tension benchmark lists or MoonBoard benchmarks (both at 40°), alternating.",
+   "load": "Fingers and skin: high",
+   "spacing": "At least 2 days from Finger"
+  },
+  {
+   "session": "Pull",
+   "what": "Weighted pullups, lockoffs, one-arm declines. Rotator cuff once a week. Shoulder strength is tracked here.",
+   "load": "Shoulders: high; fingers: low",
+   "spacing": "Can sit next to Finger or Board"
+  },
+  {
+   "session": "Weakness",
+   "what": "Current 5-week block: pinch, heel-hook hip raises, easy open-hand drag.",
+   "load": "Low",
+   "spacing": "Light day: best the day after a heavy session"
+  },
+  {
+   "session": "Stretching",
+   "what": "Three 10–15 minute slots a week, on rest days or after sessions.",
+   "load": "Low",
+   "spacing": "Any day; not counted as a session"
+  }
+ ],
+ "rules": [
+  {
+   "title": "Spacing",
+   "text": "Finger and Board go at least 48 hours apart, because they load the same tissues."
+  },
+  {
+   "title": "Light day",
+   "text": "Weakness is your light day. Do it the day after something heavy."
+  },
+  {
+   "title": "Pull day",
+   "text": "Can sit next to either Finger or Board, since it is easy on the fingers."
+  },
+  {
+   "title": "What to do next",
+   "text": "Do whichever session is most overdue that the rules allow. If you are tired or your fingers are sore, drop to Weakness or stretching."
+  },
+  {
+   "title": "Full week",
+   "text": "Four sessions: Finger, Board, Pull, Weakness."
+  },
+  {
+   "title": "Three-session week",
+   "text": "Finger, Board, and Pull with Weakness at the end."
+  },
+  {
+   "title": "Finger rotation",
+   "text": "Two weeks of heavy half-crimp toward the one-arm hang, then one week of open-hand drag and repeaters (submaximal)."
+  },
+  {
+   "title": "Weaker hand",
+   "text": "Left hand goes first in every set."
+  },
+  {
+   "title": "Rotator cuff",
+   "text": "Once a week, with Pull."
+  },
+  {
+   "title": "Shoulders",
+   "text": "Trained on Pull day and tracked there, not as a separate weakness block."
+  },
+  {
+   "title": "Boards",
+   "text": "Tension climbs are tracked as Tension 1 to 3 and MoonBoard as its benchmark list, both boards at 40°. Log the number of tries on each climb you send."
+  },
+  {
+   "title": "Readiness",
+   "text": "Log a 1 to 5 on each session. 1 or 2 means a light day."
+  },
+  {
+   "title": "Assumption",
+   "text": "Strength figures are Tindeq peak pull (force, not added weight). Holding a one-arm hang needs margin over a one-off peak."
+  }
+ ]
+}
