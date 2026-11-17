@@ -4,11 +4,20 @@ A phone-first training log: what to do next, strength trends, climb list progres
 It is a static site (no build step, no dependencies). Everything it shows comes from `data.json`.
 
 ## Updating
-After a session, edit `data.json` and push. GitHub Pages redeploys in about a minute.
+Two ways, both write the same `data.json` (the single source of truth):
 
-- `sessions`: one row per session. `type` is Finger, Board, Pull, Weakness or Stretching. `readiness` is 1 to 5 or null.
+1. From the site. Log a session, add a Tindeq test (CSV import or by hand), mark climbs sent or add climbs.
+   Plan, Saving: paste a fine-grained GitHub token (this repo only, Contents read and write). It is kept in the
+   browser's localStorage and never committed. Each change becomes a commit to `data.json`; if the phone is offline,
+   changes wait in a queue and upload later. Changes are idempotent ops, so a retry never double-adds.
+2. Send Claude board screenshots or a CSV; Claude edits `data.json` and pushes. Keep `rev` going up by one per commit.
+
+GitHub Pages redeploys in about a minute.
+
+- `rev`: integer, +1 per commit. The site prefers its own just-saved copy until the deployed file catches up.
+- `sessions`: one row per session, each with an `id`. `type` is Finger, Board, Pull, Weakness or Stretching. `readiness` is 1 to 5 or null.
 - `lists[].climbs[]`: set `sent` to true, add `tries` (and optionally `dateSent`).
-- `strength`: add a row per Tindeq test (`type` is "20mm half crimp" or "Pinch block", kg values, optional `time` as "HH:MM").
+- `strength`: add a row per Tindeq test (with an `id`) (`type` is "20mm half crimp" or "Pinch block", kg values, optional `time` as "HH:MM").
 - `updated`: today's date.
 
 ## Do-next logic (app.js, `recommend`)

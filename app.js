@@ -168,6 +168,9 @@ function renderToday() {
       h('p', { class: 'ask-hint' }, '1 is wrecked, 5 is fresh. A 1 or 2 makes today a light day.'),
       group));
   }
+  root.append(h('button', { type: 'button', class: 'btn primary block cta', onclick: () => Log.sessionSheet({
+    today, readiness, suggested: TYPES.includes(rec.title) ? rec.title : 'Stretching',
+  }) }, 'Log a session'));
 
   // queue
   const st = stateAt(data, today);
@@ -189,6 +192,20 @@ function renderToday() {
       h('span', { class: 'dots', 'aria-label': `${filled} of ${r.st.target} this week` }, '●'.repeat(filled) + '○'.repeat(r.st.target - filled))));
   }
   root.append(section('This week', 'Finger and Board need two days between them. A week is the last 7 days.', queue));
+
+  // recent sessions, newest first
+  const recent = [...data.sessions].filter(x => x.date <= today).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5);
+  if (recent.length) {
+    const list = h('ul', { class: 'recent' });
+    for (const x of recent) {
+      const extra = [x.title && x.title !== x.type ? x.title : null, x.readiness ? `readiness ${x.readiness}` : null].filter(Boolean).join(', ');
+      list.append(h('li', {},
+        h('span', { class: 'rt' }, `${x.type}, ${fmt(x.date)}`),
+        extra ? h('span', { class: 'rm' }, extra) : null,
+        x.id ? Log.confirmButton('Remove', 'Tap again to remove', () => Log.submit([{ id: 'o' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7), op: 'deleteSession', at: localISO(), target: x.id }])) : null));
+    }
+    root.append(section('Recent sessions', 'Logged one by mistake? Remove it here.', list));
+  }
 
   // figures
   const trainingDates = data.sessions.filter(x => x.type !== 'Stretching').map(x => x.date);
@@ -272,7 +289,8 @@ function renderStrength() {
   const root = h('div');
   root.append(h('section', { class: 'section' },
     h('h2', {}, '20mm half crimp'),
-    h('p', { class: 'sub' }, `Latest test ${fmtLong(last.date)}. Goal: ${data.athlete.goal.toLowerCase()}, about ${bw} kg of pull.`)));
+    h('p', { class: 'sub' }, `Latest test ${fmtLong(last.date)}. Goal: ${data.athlete.goal.toLowerCase()}, about ${bw} kg of pull.`),
+    h('button', { type: 'button', class: 'btn block cta', onclick: () => Log.testSheet({ today: state.today }) }, 'Add a Tindeq test')));
 
   const hands = h('div', { class: 'hands' });
   for (const [side, cls, key] of [['Right hand', 's1', 'right'], ['Left hand', 's2', 'left']]) {
@@ -330,10 +348,13 @@ function renderStrength() {
   // pinch
   const pinches = data.strength.filter(x => x.type === 'Pinch block').sort((a, b) => a.date.localeCompare(b.date));
   if (pinches.length) {
-    const p = pinches[pinches.length - 1];
+    const p = pinches[pinches.length - 1], prev = pinches[pinches.length - 2];
+    const chg = (a, b) => { const v = (a / b - 1) * 100; return `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(1)}%`; };
     root.append(h('section', { class: 'section' },
       h('h2', {}, 'Pinch block'),
-      h('p', { class: 'sub' }, `One-hand max, ${fmtLong(p.date)}. Retest to see the trend.`),
+      h('p', { class: 'sub' }, prev
+        ? `One-hand max, ${fmtLong(p.date)}. Since ${fmtLong(prev.date)}: ${chg(p.right, prev.right)} right, ${chg(p.left, prev.left)} left.`
+        : `One-hand max, ${fmtLong(p.date)}. Retest to see the trend.`),
       h('div', { class: 'figs', style: 'grid-template-columns:1fr 1fr' },
         h('div', { class: 'fig' }, h('b', {}, `${kg(p.right)} kg`), h('span', {}, 'Right hand')),
         h('div', { class: 'fig' }, h('b', {}, `${kg(p.left)} kg`), h('span', {}, 'Left hand')))));
@@ -553,7 +574,7 @@ function renderClimbs() {
   const avg = withTries.length ? withTries.reduce((a, c) => a + c.tries, 0) / withTries.length : null;
   const flashes = withTries.filter(c => c.tries === 1).length;
   const root = h('div');
-  root.append(section('Climb lists', 'Tap a list to see its climbs. Tick a climb in the app and send Claude a screenshot to log it.'));
+  root.append(section('Climb lists', 'Tap a list to see its climbs. Tap a climb to mark it sent or add your tries.'));
 
   const lists = h('div', { class: 'lists' });
   for (const l of data.lists) {
@@ -565,12 +586,17 @@ function renderClimbs() {
     else if (l.promote && left <= 1) next = 'One left: move up a list';
     const body = h('ul', { class: 'climbs' });
     for (const c of l.climbs) {
-      body.append(h('li', {},
+      const open = () => Log.climbSheet({ list: l, climb: c, today: state.today });
+      body.append(h('li', {
+        class: 'tap', role: 'button', tabindex: '0', 'aria-label': `${c.name}, ${c.grade}, ${c.sent ? 'sent' : 'not sent'}. Edit`,
+        onclick: open, onkeydown: e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } },
+      },
         checkIcon(c.sent),
         h('span', { class: 'cn' }, c.name),
         h('span', { class: 'cg' }, c.grade),
         (c.tries != null || c.note) ? h('span', { class: 'cm' }, [c.sent && c.tries != null ? plural(c.tries, 'try', 'tries') : null, c.note].filter(Boolean).join(', ')) : null));
     }
+    body.append(h('li', { class: 'addrow' }, h('button', { type: 'button', class: 'btn quiet', onclick: () => Log.addClimbSheet({ list: l }) }, 'Add a climb')));
     lists.append(h('details', { class: 'list', open: l.id === 'tension-1' || null },
       h('summary', {},
         h('span', { class: 'nm' }, l.name),
@@ -581,7 +607,7 @@ function renderClimbs() {
   }
   root.append(lists);
 
-  root.append(section('Tries per send', 'Log the number of tries when you send a climb.', h('div', { class: 'figs' },
+  root.append(section('Tries per send', 'Add the number of tries when you mark a climb sent.', h('div', { class: 'figs' },
     h('div', { class: 'fig' }, h('b', {}, `${sends.length}/${all.length}`), h('span', {}, 'climbs sent')),
     h('div', { class: 'fig' }, h('b', {}, avg == null ? 'none' : avg.toFixed(1)), h('span', {}, `tries per send, from ${plural(withTries.length, 'send', 'sends')} with tries logged`)),
     h('div', { class: 'fig' }, h('b', {}, String(flashes)), h('span', {}, (flashes === 1 ? 'flash' : 'flashes') + ' (sent first try)')))));
@@ -602,7 +628,8 @@ function renderPlan() {
 
   const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
   if (!standalone) root.append(h('p', { class: 'tip-install' }, h('b', {}, 'Add to your home screen. '), 'In Safari, tap Share, then Add to Home Screen. It opens full screen and keeps working when the gym has no signal.'));
-  root.append(h('p', { class: 'foot', style: 'margin-top:24px' }, `Data updated ${fmtLong(data.updated)}. To log a session, send Claude a screenshot of your board app or the Tindeq file.`));
+  root.append(Log.settingsCard(() => mount()));
+  root.append(h('p', { class: 'foot', style: 'margin-top:24px' }, `Data updated ${fmtLong(data.updated)}. Board screenshots: send them to Claude and they get added for you.`));
   return root;
 }
 
@@ -610,6 +637,10 @@ function renderPlan() {
 const VIEWS = { today: renderToday, strength: renderStrength, climbs: renderClimbs, plan: renderPlan };
 const view = document.getElementById('view');
 
+function renderHeader() {
+  const n = Log.pendingCount();
+  document.getElementById('updated').textContent = `Updated ${fmt(state.data.updated)}` + (n ? `, ${n} not uploaded` : '');
+}
 function mount() {
   const y = window.scrollY;
   view.replaceChildren(VIEWS[state.tab]());
@@ -631,15 +662,20 @@ document.addEventListener('pointerdown', e => {
   document.querySelectorAll('.chart .tip').forEach(t => { if (!t.parentElement.contains(e.target)) t.hidden = true; });
 });
 
+function start(data) {
+  state.data = data;
+  Log.onChange = d => { state.data = d; renderHeader(); mount(); };
+  renderHeader();
+  go(location.hash.slice(1) || 'today', false);
+  Log.init();
+}
 fetch('data.json', { cache: 'no-cache' })
   .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
-  .then(data => {
-    state.data = data;
-    document.getElementById('updated').textContent = `Updated ${fmt(data.updated)}`;
-    go(location.hash.slice(1) || 'today', false);
-  })
+  .then(data => start(Log.resolve(data)))
   .catch(() => {
-    view.replaceChildren(h('p', { class: 'loading' }, 'Could not load the data. Check your connection and reload.'));
+    const saved = Log.resolve(null);
+    if (saved) start(saved);
+    else view.replaceChildren(h('p', { class: 'loading' }, 'Could not load the data. Check your connection and reload.'));
   });
 
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
