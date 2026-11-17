@@ -78,14 +78,6 @@
     },
     {
       "date": "2026-11-17",
-      "type": "Board",
-      "title": "1 v7 complete at 40",
-      "readiness": 3,
-      "details": "",
-      "id": "s9"
-    },
-    {
-      "date": "2026-11-17",
       "type": "Stretching",
       "title": "Stretching",
       "readiness": 2,
@@ -594,7 +586,7 @@
       "text": "Strength figures are Tindeq peak pull (force, not added weight). Holding a one-arm hang needs margin over a one-off peak."
     }
   ],
-  "rev": 4,
+  "rev": 5,
   "workouts": {
     "Weakness": {
       "title": "Weakness session",
