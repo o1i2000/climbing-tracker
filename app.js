@@ -81,39 +81,57 @@ function statusFor(t, st, day) {
   return { kind: 'go' };
 }
 
+const groupsOf = data => (data.groups && data.groups.length ? data.groups : TRAIN.map(t => [t]));
+function groupInfo(members, st, status) {
+  const live = members.filter(t => status[t].kind !== 'done');
+  const waiting = live.filter(t => status[t].kind === 'wait');
+  const since = Math.max(...members.map(t => st[t].since ?? 1e9));
+  if (waiting.length) return { members, live, kind: 'wait', until: waiting.map(t => status[t].until).sort().pop(), open: [], since };
+  return { members, live, kind: live.length ? 'go' : 'done', open: live, since };
+}
+
 function recommend(data, today, readiness) {
   const todays = data.sessions.filter(x => x.date === today);
   const trainedToday = todays.some(x => x.type !== 'Stretching');
   const day = trainedToday ? addDays(today, 1) : today;
   const st = stateAt(data, day);
   const status = Object.fromEntries(TRAIN.map(t => [t, statusFor(t, st, day)]));
-  const open = TRAIN.filter(t => status[t].kind === 'go');
+  const groups = groupsOf(data).map(m => groupInfo(m, st, status));
+  const open = groups.filter(g => g.kind === 'go');
+  const weak = open.find(g => g.open.includes('Weakness'));
   const yest = addDays(day, -1);
   const heavyYest = HEAVY.find(t => data.sessions.some(x => x.date === yest && x.type === t));
   const light = !trainedToday && readiness != null && readiness <= 2;
-  let pick = null;
+  let picks = [];
   const why = [];
 
   if (light) {
-    pick = open.includes('Weakness') ? 'Weakness' : (st.Stretching.count7 < st.Stretching.target ? 'Stretching' : null);
+    picks = weak ? weak.open : (st.Stretching.count7 < st.Stretching.target ? ['Stretching'] : []);
     why.push(`You rated today ${readiness} out of 5, so keep it light.`);
-  } else if (heavyYest && open.includes('Weakness')) {
-    pick = 'Weakness';
+  } else if (heavyYest && weak) {
+    picks = weak.open;
     why.push(`Light day after ${heavyYest} on ${fmt(yest)}.`);
   } else if (open.length) {
-    pick = open
-      .map(t => ({ t, since: st[t].last == null ? Infinity : diffDays(day, st[t].last) }))
-      .sort((a, b) => (b.since - a.since) || (TRAIN.indexOf(a.t) - TRAIN.indexOf(b.t)))[0].t;
-    why.push(st[pick].last == null
-      ? `You haven't logged ${pick} yet.`
-      : `Last logged ${fmt(st[pick].last)}, ${sinceText(diffDays(day, st[pick].last))}.`);
+    const best = [...open].sort((a, b) => ((b.since - a.since) || (groups.indexOf(a) - groups.indexOf(b))))[0];
+    picks = best.open;
+    const logged = picks.filter(t => st[t].last != null);
+    if (!logged.length) why.push(`You haven't logged ${picks.join(' or ')} yet.`);
+    else {
+      const lead = logged.sort((a, b) => st[b].since - st[a].since)[0];
+      why.push(`${lead} was last logged ${fmt(st[lead].last)}, ${sinceText(diffDays(day, st[lead].last))}.`);
+    }
   }
-  if (!pick) why.unshift(light ? '' : 'Every session is done for the week or waiting on a gap.');
-  for (const t of HEAVY) if (status[t].kind === 'wait' && pick !== t) why.push(`${t} is free again on ${fmt(status[t].until)}.`);
+  if (!picks.length) why.unshift(light ? '' : 'Every session is done for the week or waiting on a gap.');
+  for (const g of groups) {
+    if (g.kind === 'wait' && !g.members.some(t => picks.includes(t))) {
+      why.push(`${g.live.join(' and ')} ${g.live.length > 1 ? 'are' : 'is'} free again on ${fmt(g.until)}.`);
+    }
+  }
 
   return {
-    title: pick || 'Rest or stretch',
-    ring: pick ? 'go' : 'rest',
+    title: picks.length ? picks.join(' and ') : 'Rest or stretch',
+    picks,
+    ring: picks.length ? 'go' : 'rest',
     kicker: trainedToday ? `Tomorrow, ${fmt(day)}` : `Today, ${fmt(day)}`,
     trainedToday,
     why: why.filter(Boolean).join(' '),
@@ -151,7 +169,7 @@ function renderToday() {
 
   root.append(h('section', { class: 'hero' },
     h('p', { class: 'kicker' }, rec.kicker),
-    h('h1', { class: 'hero-title' }, ringIcon(rec.ring, 46), rec.title),
+    h('h1', { class: rec.title.length > 9 ? 'hero-title long' : 'hero-title' }, ringIcon(rec.ring, 46), rec.title),
     h('p', { class: 'hero-why' }, rec.why),
     rec.logged.length ? h('p', { class: 'hero-logged' }, `Logged today: ${rec.logged.join(', ')}.`) : null));
 
@@ -169,16 +187,23 @@ function renderToday() {
       group));
   }
   root.append(h('button', { type: 'button', class: 'btn primary block cta', onclick: () => Log.sessionSheet({
-    today, readiness, suggested: TYPES.includes(rec.title) ? rec.title : 'Stretching',
+    today, readiness, suggested: rec.picks.length === 1 ? rec.picks : (rec.picks.length ? [] : ['Stretching']),
   }) }, 'Log a session'));
 
-  // queue
+  // queue: grouped by day, so Finger and Pull sit together but stay separate tasks
   const st = stateAt(data, today);
-  const rows = TRAIN.map(t => ({ t, st: st[t], status: statusFor(t, st, today) }));
+  const stat = Object.fromEntries(TRAIN.map(t => [t, statusFor(t, st, today)]));
+  const groups = groupsOf(data).map(m => groupInfo(m, st, stat));
   const rank = { go: 0, wait: 1, done: 2 };
-  rows.sort((a, b) => rank[a.status.kind] - rank[b.status.kind]
-    || (b.st.since ?? 1e9) - (a.st.since ?? 1e9) || TRAIN.indexOf(a.t) - TRAIN.indexOf(b.t));
-  rows.push({ t: 'Stretching', st: st.Stretching, status: { kind: st.Stretching.count7 >= st.Stretching.target ? 'done' : 'go' } });
+  groups.sort((a, b) => rank[a.kind] - rank[b.kind] || (b.since - a.since));
+  const rows = [];
+  for (const g of groups) {
+    for (const t of g.members) {
+      const mates = g.members.filter(x => x !== t);
+      rows.push({ t, st: st[t], mates, status: g.kind === 'wait' && stat[t].kind === 'go' ? { kind: 'wait', until: g.until } : stat[t] });
+    }
+  }
+  rows.push({ t: 'Stretching', st: st.Stretching, mates: [], status: { kind: st.Stretching.count7 >= st.Stretching.target ? 'done' : 'go' } });
   const queue = h('ul', { class: 'queue' });
   for (const r of rows) {
     const k = r.status.kind;
@@ -188,10 +213,11 @@ function renderToday() {
       h('span', { class: 'ico' }, ringIcon(k, 26)),
       h('span', { class: 'name' }, r.t),
       h('span', { class: `state ${k}` }, label),
-      h('span', { class: 'since' }, r.st.since == null ? 'Not logged yet' : `Last done ${sinceText(r.st.since)}`),
+      h('span', { class: 'since' }, (r.st.since == null ? 'Not logged yet' : `Last done ${sinceText(r.st.since)}`) + (r.mates.length ? `. Same day as ${r.mates.join(' and ')}` : '')),
       h('span', { class: 'dots', 'aria-label': `${filled} of ${r.st.target} this week` }, '●'.repeat(filled) + '○'.repeat(r.st.target - filled))));
   }
-  root.append(section('This week', 'Finger and Board need two days between them. A week is the last 7 days.', queue));
+  const shared = groupsOf(data).filter(g => g.length > 1).map(g => `${g.join(' and ')} share a day.`).join(' ');
+  root.append(section('This week', `Finger and Board need two days between them. ${shared} A week is the last 7 days.`.replace('  ', ' '), queue));
 
   // recent sessions, newest first
   const recent = [...data.sessions].filter(x => x.date <= today).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5);
@@ -209,13 +235,13 @@ function renderToday() {
 
   // figures
   const trainingDates = data.sessions.filter(x => x.type !== 'Stretching').map(x => x.date);
-  const in7 = trainingDates.filter(d => diffDays(today, d) < 7 && diffDays(today, d) >= 0).length;
-  const in30 = trainingDates.filter(d => diffDays(today, d) < 30 && diffDays(today, d) >= 0).length;
+  const in7 = new Set(trainingDates.filter(d => diffDays(today, d) < 7 && diffDays(today, d) >= 0)).size;
+  const in30 = new Set(trainingDates.filter(d => diffDays(today, d) < 30 && diffDays(today, d) >= 0)).size;
   const climbs = data.lists.flatMap(l => l.climbs);
   const sent = climbs.filter(c => c.sent).length;
   root.append(section('Training load', null, h('div', { class: 'figs' },
-    h('div', { class: 'fig' }, h('b', {}, String(in7)), h('span', {}, plural(in7, 'session', 'sessions') + ' in the last 7 days')),
-    h('div', { class: 'fig' }, h('b', {}, String(in30)), h('span', {}, plural(in30, 'session', 'sessions') + ' in the last 30 days')),
+    h('div', { class: 'fig' }, h('b', {}, String(in7)), h('span', {}, plural(in7, 'training day', 'training days') + ' in the last 7 days')),
+    h('div', { class: 'fig' }, h('b', {}, String(in30)), h('span', {}, plural(in30, 'training day', 'training days') + ' in the last 30 days')),
     h('div', { class: 'fig' }, h('b', {}, `${sent}/${climbs.length}`), h('span', {}, 'list climbs sent')))));
 
   root.append(section('Last 8 weeks', null, activityGrid(data, today)));
@@ -628,7 +654,7 @@ function renderPlan() {
       h('h3', {}, p.session), h('p', {}, p.what), h('p', { class: 'meta' }, `${p.load}. ${p.spacing}.`),
       has ? h('p', { class: 'open' }, 'Open the workout') : null));
   }
-  root.append(section('The plan', `Weekly targets: ${TYPES.map(t => `${t} ${data.targets[t]}`).join(', ')}.`, plan));
+  root.append(section('The plan', `Weekly targets: ${TYPES.map(t => `${t} ${data.targets[t]}`).join(', ')}.${data.planNote ? ' ' + data.planNote : ''}`, plan));
 
   const rules = h('ul', { class: 'rules' });
   for (const r of data.rules) rules.append(h('li', {}, h('b', {}, r.title + ': '), r.text));
@@ -695,18 +721,17 @@ function startTimer(label, seconds) {
   tick();
 }
 
-function exerciseCard(key, e, n) {
+function exerciseBody(key, e, parent) {
   const { today } = state;
   const doneKey = `done:${today}:${e.id}`;
   let done = Math.min(Number(store(doneKey)) || 0, e.sets || 0);
   const unit = e.unit || 'set';
-  const li = h('li', { class: 'ex' });
-  li.append(h('div', { class: 'ex-head' }, h('span', { class: 'ex-n', 'aria-hidden': 'true' }, String(n)), h('h3', {}, e.name)));
-  li.append(e.sets && e.reps
+  const out = [];
+  out.push(e.sets && e.reps
     ? h('p', { class: 'dose' }, `${e.sets} × ${e.reps}`)
     : h('p', { class: 'dose unset' }, 'Sets and reps not set yet'));
-  if (e.load || e.needsLoad) li.append(h('p', { class: 'load' }, 'Weight: ', e.load ? h('b', {}, e.load) : 'not set yet'));
-  if (e.how) li.append(h('p', { class: 'how' }, e.how));
+  if (e.load || e.needsLoad) out.push(h('p', { class: 'load' }, 'Weight: ', e.load ? h('b', {}, e.load) : 'not set yet'));
+  if (e.how) out.push(h('p', { class: 'how' }, e.how));
   if (e.sets) {
     const count = h('p', { class: 'ex-count', 'aria-live': 'polite' });
     const dots = h('div', { class: 'ticks', role: 'group', 'aria-label': `${unitText(e.sets, unit)} to tick off` });
@@ -720,7 +745,7 @@ function exerciseCard(key, e, n) {
       } }, String(i + 1)));
     }
     draw();
-    li.append(dots, count);
+    out.push(dots, count);
   }
   if (e.timers && e.timers.length) {
     const row = h('div', { class: 'timers' });
@@ -728,9 +753,46 @@ function exerciseCard(key, e, n) {
       row.append(h('button', { type: 'button', class: t.work ? 'work' : '', onclick: () => startTimer(`${e.name}: ${t.label.toLowerCase()}`, t.s) },
         h('span', { class: 'tl' }, t.label), h('span', { class: 'tt' }, fmtClock(t.s))));
     }
-    li.append(row);
+    out.push(row);
   }
-  li.append(h('button', { type: 'button', class: 'btn quiet ex-edit', onclick: () => Log.exerciseSheet({ workout: key, exercise: e }) }, 'Edit sets, reps and weight'));
+  out.push(h('button', { type: 'button', class: 'btn quiet ex-edit', onclick: () => Log.exerciseSheet(parent ? { workout: key, exercise: parent, variant: e } : { workout: key, exercise: e }) }, 'Edit sets, reps and weight'));
+  return out;
+}
+
+/* a "pick one" exercise: choose today's variant; the choice is remembered for the day */
+const variantKey = e => `variant:${state.today}:${e.id}`;
+function lastVariant(key, e) {
+  const mine = state.data.sessions.filter(x => x.type === key && x.date <= state.today).sort((a, b) => b.date.localeCompare(a.date));
+  for (const x of mine) {
+    const v = e.variants.find(v => (x.title || '').toLowerCase().includes(v.name.toLowerCase()));
+    if (v) return { v, date: x.date };
+  }
+  return null;
+}
+function chosenVariant(key, e) {
+  const saved = store(variantKey(e));
+  const hit = e.variants.find(v => v.id === saved);
+  if (hit) return hit;
+  const last = lastVariant(key, e);
+  return last ? e.variants[(e.variants.indexOf(last.v) + 1) % e.variants.length] : e.variants[0];
+}
+
+function exerciseCard(key, e, n) {
+  const li = h('li', { class: 'ex' });
+  li.append(h('div', { class: 'ex-head' }, h('span', { class: 'ex-n', 'aria-hidden': 'true' }, String(n)), h('h3', {}, e.name)));
+  if (!e.variants) { li.append(...exerciseBody(key, e, null)); return li; }
+  const last = lastVariant(key, e);
+  const body = h('div', { class: 'variant-body' });
+  const row = h('div', { class: 'chips', role: 'radiogroup', 'aria-label': 'Choose one for today' });
+  let cur = chosenVariant(key, e);
+  const draw = () => {
+    row.querySelectorAll('button').forEach(b => b.setAttribute('aria-checked', String(b.dataset.v === cur.id)));
+    body.replaceChildren(...exerciseBody(key, cur, e));
+  };
+  for (const v of e.variants) row.append(h('button', { type: 'button', role: 'radio', 'data-v': v.id, onclick: () => { cur = v; store(variantKey(e), v.id); draw(); } }, v.name));
+  if (last) li.append(h('p', { class: 'how', style: 'margin-top:8px' }, `Last time: ${last.v.name}, ${fmt(last.date)}.`));
+  li.append(row, body);
+  draw();
   return li;
 }
 
@@ -744,7 +806,10 @@ function renderWorkout(key) {
   const list = h('ol', { class: 'workout' });
   w.exercises.forEach((e, i) => list.append(exerciseCard(key, e, i + 1)));
   root.append(list);
-  root.append(h('button', { type: 'button', class: 'btn primary block cta', onclick: () => Log.sessionSheet({ today, readiness: getReadiness(today), suggested: TYPES.includes(key) ? key : null }) }, 'Log this session'));
+  root.append(h('button', { type: 'button', class: 'btn primary block cta', onclick: () => {
+    const picked = w.exercises.filter(x => x.variants).map(x => chosenVariant(key, x).name);
+    Log.sessionSheet({ today, readiness: getReadiness(today), suggested: TYPES.includes(key) ? [key] : [], title: picked.length === 1 ? picked[0] : '' });
+  } }, 'Log this session'));
   return root;
 }
 

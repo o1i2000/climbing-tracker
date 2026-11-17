@@ -248,7 +248,7 @@ body.noscroll { overflow: hidden; }
 .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .chips button { min-height: 46px; padding: 0 16px; border-radius: 23px; border: 1.5px solid var(--axis); background: transparent; font-weight: 650; cursor: pointer; }
-.chips button[aria-checked="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+.chips button[aria-checked="true"], .chips button[aria-pressed="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
 .sheet-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; align-items: stretch; }
 .sheet-actions .quiet { align-self: center; }
 .hint { margin-top: 10px; font-size: 13px; color: var(--ink-2); }
@@ -316,3 +316,8 @@ details.fold.how > summary { font-size: 16px; min-height: 40px; }
 .t-btns { display: flex; gap: 8px; flex: none; }
 .t-btns button { min-height: 44px; padding: 0 14px; border-radius: 12px; border: 1.5px solid currentColor; background: transparent; color: inherit; font-weight: 650; cursor: pointer; }
 .timer.done { background: #0a7a0a; color: #fff; }
+
+.hero-title.long { font-size: 40px; }
+@media (min-width: 420px) { .hero-title.long { font-size: 46px; } }
+.variant-body { margin-top: 4px; }
+.ex > .chips { margin-top: 12px; }

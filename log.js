@@ -68,7 +68,8 @@ function applyOp(d, op) {
   } else if (op.op === 'setExercise') {
     const w = d.workouts && d.workouts[op.workout];
     const e = w && w.exercises.find(x => x.id === op.exercise);
-    if (e) Object.assign(e, op.fields);
+    const t = e && (op.variant ? (e.variants || []).find(v => v.id === op.variant) : e);
+    if (t) Object.assign(t, op.fields);
   } else if (op.op === 'deleteClimb') {
     const l = d.lists.find(x => x.id === op.list);
     if (l) l.climbs = l.climbs.filter(c => c.name !== op.name);
@@ -236,6 +237,14 @@ function chips(options, value, label, allowClear) {
   draw();
   return { el, get: () => val };
 }
+function multiChips(options, values, label) {
+  const sel = new Set(values);
+  const el = h('div', { class: 'chips', role: 'group', 'aria-label': label });
+  const draw = () => el.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(sel.has(b.dataset.v))));
+  for (const o of options) el.append(h('button', { type: 'button', 'data-v': o, 'aria-pressed': 'false', onclick: () => { if (sel.has(o)) sel.delete(o); else sel.add(o); draw(); } }, o));
+  draw();
+  return { el, get: () => options.filter(o => sel.has(o)) };
+}
 function confirmButton(label, armed, onConfirm) {
   let timer;
   const b = h('button', { type: 'button', class: 'btn quiet', onclick: () => {
@@ -252,30 +261,32 @@ function errBox() { return h('p', { class: 'err', role: 'alert', hidden: true })
 function showErr(box, msg) { box.textContent = msg; box.hidden = false; box.scrollIntoView({ block: 'nearest' }); }
 
 /* ---------- Log a session ---------- */
-function sessionSheet({ today, suggested, readiness }) {
+function sessionSheet({ today, suggested, readiness, title: prefill }) {
   sheet('Log a session', close => {
-    const type = chips(TYPES, suggested, 'Session type');
+    const type = multiChips(TYPES, suggested || [], 'Session type');
     const ready = chips(['1', '2', '3', '4', '5'], readiness ? String(readiness) : null, 'How ready you felt, 1 to 5', true);
     const date = h('input', { type: 'date', value: today });
-    const title = h('input', { type: 'text', maxlength: '80', autocomplete: 'off', placeholder: 'e.g. Tension 1 problems' });
+    const title = h('input', { type: 'text', maxlength: '80', autocomplete: 'off', placeholder: 'e.g. Tension 1 problems', value: prefill || '' });
     const notes = h('textarea', { rows: '3', placeholder: 'Optional' });
     const err = errBox();
     const save = h('button', { type: 'button', class: 'btn primary block', onclick: () => {
-      if (!type.get()) return showErr(err, 'Pick a session type.');
+      const types = type.get();
+      if (!types.length) return showErr(err, 'Pick at least one session type.');
       if (!date.value) return showErr(err, 'Pick a date.');
       const r = ready.get() ? Number(ready.get()) : null;
       if (r) ls.set('readiness:' + date.value, String(r));
       close();
-      submit([{ id: uid(), op: 'addSession', at: isoToday(), session: {
-        date: date.value, type: type.get(), title: title.value.trim() || type.get(), readiness: r, details: notes.value.trim(),
-      } }]);
+      submit(types.map(t => ({ id: uid(), op: 'addSession', at: isoToday(), session: {
+        date: date.value, type: t, title: types.length === 1 ? (title.value.trim() || t) : t, readiness: r, details: notes.value.trim(),
+      } })));
     } }, 'Save session');
     return h('div', {},
-      h('div', { class: 'f' }, h('span', { class: 'f-l' }, 'Type'), type.el),
+      h('div', { class: 'f' }, h('span', { class: 'f-l' }, 'Type'), type.el,
+        h('span', { class: 'f-h' }, 'Tap more than one to log them together. Each is saved as its own session.')),
       field('Date', date),
       h('div', { class: 'f' }, h('span', { class: 'f-l' }, 'How ready did you feel?'), ready.el,
         h('span', { class: 'f-h' }, '1 is wrecked, 5 is fresh. Optional.')),
-      field('What you did', title),
+      field('What you did', title, 'Used when you log one type.'),
       field('Notes', notes),
       err, saveNote(),
       h('div', { class: 'sheet-actions' }, save));
@@ -456,11 +467,12 @@ function addClimbSheet({ list }) {
 }
 
 /* ---------- Edit an exercise ---------- */
-function exerciseSheet({ workout, exercise }) {
-  sheet(exercise.name, close => {
-    const sets = h('input', { type: 'number', min: '1', max: '30', step: '1', inputmode: 'numeric', placeholder: 'e.g. 4', value: exercise.sets == null ? '' : String(exercise.sets) });
-    const reps = h('input', { type: 'text', maxlength: '40', autocomplete: 'off', placeholder: 'e.g. 8 each side', value: exercise.reps || '' });
-    const load = h('input', { type: 'text', maxlength: '40', autocomplete: 'off', placeholder: 'e.g. 12 kg', value: exercise.load || '' });
+function exerciseSheet({ workout, exercise, variant }) {
+  const target = variant || exercise;
+  sheet(target.name, close => {
+    const sets = h('input', { type: 'number', min: '1', max: '30', step: '1', inputmode: 'numeric', placeholder: 'e.g. 4', value: target.sets == null ? '' : String(target.sets) });
+    const reps = h('input', { type: 'text', maxlength: '40', autocomplete: 'off', placeholder: 'e.g. 8 each side', value: target.reps || '' });
+    const load = h('input', { type: 'text', maxlength: '40', autocomplete: 'off', placeholder: 'e.g. 12 kg', value: target.load || '' });
     return h('div', {},
       h('div', { class: 'pair' }, field('Sets', sets), field('Reps or time', reps)),
       field('Weight', load, 'Leave empty if it is bodyweight or not set yet.'),
@@ -468,7 +480,7 @@ function exerciseSheet({ workout, exercise }) {
       h('div', { class: 'sheet-actions' }, h('button', { type: 'button', class: 'btn primary block', onclick: () => {
         const n = sets.value === '' ? null : Math.max(1, Math.round(Number(sets.value)));
         close();
-        submit([{ id: uid(), op: 'setExercise', at: isoToday(), workout, exercise: exercise.id, fields: { sets: n, reps: reps.value.trim() || null, load: load.value.trim() || null } }]);
+        submit([{ id: uid(), op: 'setExercise', at: isoToday(), workout, exercise: exercise.id, variant: variant ? variant.id : undefined, fields: { sets: n, reps: reps.value.trim() || null, load: load.value.trim() || null } }]);
       } }, 'Save')));
   });
 }

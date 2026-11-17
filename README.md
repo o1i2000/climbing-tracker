@@ -29,3 +29,13 @@ GitHub Pages redeploys in about a minute.
 
 ## Testing
 `python3 -m http.server`, then open `/?today=2026-11-17` to pretend it is another day.
+
+## Days and groups
+`groups` in `data.json` lists which tasks share a day, for example `[["Finger","Pull"],["Board"],["Weakness"]]`.
+They stay separate tasks: logging one never ticks the other. The Today suggestion treats a group as one day, and a
+group waits if its heavy member (Finger) is inside the 2-day gap after Board.
+
+## Workouts
+`workouts.<Session>.exercises[]` drive the screens opened from the Plan tab. An exercise has `sets`, `reps`, `unit`,
+`load`, `how` and `timers`. An exercise with `variants` is a "pick one" (Pull's main lift); the session title is
+prefilled with the variant name so the next visit can show what was done last.

@@ -513,7 +513,7 @@
       "session": "Finger",
       "what": "20mm half-crimp max hangs and one-arm progressions, left hand first. Two weeks in three; the third week is open-hand drag and repeaters, submaximal.",
       "load": "Fingers: high",
-      "spacing": "At least 2 days from Board"
+      "spacing": "At least 2 days from Board; same day as Pull"
     },
     {
       "session": "Board",
@@ -523,9 +523,9 @@
     },
     {
       "session": "Pull",
-      "what": "Weighted pullups, lockoffs, one-arm declines. Rotator cuff once a week. Shoulder strength is tracked here.",
+      "what": "One main pull (weighted pullups, one-arm slow declines or lock offs), then rotator cuff rows and I Y T shoulder raises.",
       "load": "Shoulders: high; fingers: low",
-      "spacing": "Can sit next to Finger or Board"
+      "spacing": "Same day as Finger"
     },
     {
       "session": "Weakness",
@@ -551,7 +551,7 @@
     },
     {
       "title": "Pull day",
-      "text": "Can sit next to either Finger or Board, since it is easy on the fingers."
+      "text": "Done on the same day as Finger, since it is easy on the fingers. They are logged separately, so doing one does not tick the other."
     },
     {
       "title": "What to do next",
@@ -559,11 +559,11 @@
     },
     {
       "title": "Full week",
-      "text": "Four sessions: Finger, Board, Pull, Weakness."
+      "text": "Three training days: Finger with Pull, Board, and Weakness. The other days are free for climbing."
     },
     {
-      "title": "Three-session week",
-      "text": "Finger, Board, and Pull with Weakness at the end."
+      "title": "Short week",
+      "text": "Finger with Pull, and Board, come first. Weakness goes last."
     },
     {
       "title": "Finger rotation",
@@ -575,7 +575,7 @@
     },
     {
       "title": "Rotator cuff",
-      "text": "Once a week, with Pull."
+      "text": "Once a week, with Pull (rotator cuff rows)."
     },
     {
       "title": "Shoulders",
@@ -594,7 +594,7 @@
       "text": "Strength figures are Tindeq peak pull (force, not added weight). Holding a one-arm hang needs margin over a one-off peak."
     }
   ],
-  "rev": 3,
+  "rev": 4,
   "workouts": {
     "Weakness": {
       "title": "Weakness session",
@@ -687,6 +687,90 @@
           "needsLoad": true
         }
       ]
+    },
+    "Pull": {
+      "title": "Pull session",
+      "intro": "Do one main pull, then the two shoulder exercises. Finger training happens on the same day but is logged separately, so logging this does not tick Finger.",
+      "exercises": [
+        {
+          "id": "p-main",
+          "name": "Main pull: pick one",
+          "variants": [
+            {
+              "id": "p-pullups",
+              "name": "Weighted pullups",
+              "sets": 5,
+              "reps": "5",
+              "unit": "set",
+              "load": "40 kg",
+              "needsLoad": true,
+              "how": "",
+              "timers": []
+            },
+            {
+              "id": "p-declines",
+              "name": "One-arm slow declines",
+              "sets": null,
+              "reps": null,
+              "unit": "set",
+              "load": null,
+              "how": "One arm at a time, lowering slowly.",
+              "timers": []
+            },
+            {
+              "id": "p-lockoffs",
+              "name": "Lock offs",
+              "sets": 4,
+              "reps": "7–10 s hang, each arm",
+              "unit": "rep",
+              "load": null,
+              "how": "Each rep: hang for 7 to 10 seconds at 90 degrees, then at full lock, on each arm.",
+              "timers": [
+                {
+                  "label": "Hang",
+                  "s": 10,
+                  "work": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "p-cuff",
+          "name": "Rotator cuff rows",
+          "sets": 4,
+          "reps": "10 each arm",
+          "unit": "set",
+          "load": null,
+          "needsLoad": true,
+          "how": "Sit down with your arm resting on your knee and rotate a weight over the knee.",
+          "timers": []
+        },
+        {
+          "id": "p-iyt",
+          "name": "I Y T shoulder raises",
+          "sets": 5,
+          "reps": "15",
+          "unit": "set",
+          "load": "Low weight",
+          "needsLoad": true,
+          "how": "",
+          "timers": []
+        }
+      ]
     }
-  }
+  },
+  "groups": [
+    [
+      "Finger",
+      "Pull"
+    ],
+    [
+      "Board"
+    ],
+    [
+      "Weakness"
+    ]
+  ],
+  "planNote": "Finger and Pull share one day, so training takes three days a week and the rest are free for climbing."
 }
