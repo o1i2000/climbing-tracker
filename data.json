@@ -91,6 +91,22 @@
       "readiness": 2,
       "details": "",
       "id": "s10"
+    },
+    {
+      "date": "2026-11-17",
+      "type": "Stretching",
+      "title": "Half stretching routine",
+      "readiness": 3,
+      "details": "",
+      "id": "omwkupmr6ecsz6"
+    },
+    {
+      "date": "2026-11-17",
+      "type": "Weakness",
+      "title": "Weakness",
+      "readiness": 3,
+      "details": "",
+      "id": "omwkuzkyh8d1pb"
     }
   ],
   "lists": [
@@ -578,5 +594,5 @@
       "text": "Strength figures are Tindeq peak pull (force, not added weight). Holding a one-arm hang needs margin over a one-off peak."
     }
   ],
-  "rev": 1
+  "rev": 2
 }
