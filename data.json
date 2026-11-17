@@ -77,6 +77,14 @@
       "id": "s8"
     },
     {
+      "date": "2026-11-16",
+      "type": "Board",
+      "title": "1 v7 / 7a+ classic",
+      "readiness": 3,
+      "details": "With fin",
+      "id": "omwkxav2lndf9p"
+    },
+    {
       "date": "2026-11-17",
       "type": "Stretching",
       "title": "Stretching",
@@ -586,7 +594,7 @@
       "text": "Strength figures are Tindeq peak pull (force, not added weight). Holding a one-arm hang needs margin over a one-off peak."
     }
   ],
-  "rev": 5,
+  "rev": 6,
   "workouts": {
     "Weakness": {
       "title": "Weakness session",
