@@ -529,7 +529,7 @@
     },
     {
       "session": "Weakness",
-      "what": "Current 5-week block: pinch, heel-hook hip raises, easy open-hand drag.",
+      "what": "Gym strengthening for your weak spots: pinch block lifts, heel hook floor raises, ring face pulls, open hand drag, shoulder Y's to I's and sloper rollers.",
       "load": "Low",
       "spacing": "Light day: best the day after a heavy session"
     },
@@ -594,5 +594,99 @@
       "text": "Strength figures are Tindeq peak pull (force, not added weight). Holding a one-arm hang needs margin over a one-off peak."
     }
   ],
-  "rev": 2
+  "rev": 3,
+  "workouts": {
+    "Weakness": {
+      "title": "Weakness session",
+      "intro": "A gym strengthening session for the weak spots climbing does not fix by itself: pinch, heel hooks, shoulders and open-hand grip. Do the exercises in this order and tick each set as you finish it.",
+      "exercises": [
+        {
+          "id": "w-pinch",
+          "name": "Pinch block lifts",
+          "sets": 5,
+          "reps": "5 per hand",
+          "unit": "set",
+          "load": null,
+          "how": "One hand at a time, with the weight you have set.",
+          "timers": [],
+          "needsLoad": true
+        },
+        {
+          "id": "w-heel",
+          "name": "Heel hook floor raises",
+          "sets": 4,
+          "reps": "10 each side",
+          "unit": "set",
+          "load": null,
+          "how": "Finish one side, rest 30 seconds, then do the other side.",
+          "timers": [
+            {
+              "label": "Rest between left and right",
+              "s": 30
+            },
+            {
+              "label": "Rest between sets",
+              "s": 90
+            }
+          ]
+        },
+        {
+          "id": "w-face",
+          "name": "Ring face pulls",
+          "sets": 5,
+          "reps": "10",
+          "unit": "set",
+          "load": null,
+          "how": "",
+          "timers": [
+            {
+              "label": "Rest between sets",
+              "s": 180
+            }
+          ]
+        },
+        {
+          "id": "w-drag",
+          "name": "Open hand drag",
+          "sets": 8,
+          "reps": "10 s on the 18mm",
+          "unit": "hang",
+          "load": null,
+          "how": "One 10 second hang at a time.",
+          "timers": [
+            {
+              "label": "Hang",
+              "s": 10,
+              "work": true
+            },
+            {
+              "label": "Rest between hangs",
+              "s": 120
+            }
+          ]
+        },
+        {
+          "id": "w-yi",
+          "name": "Shoulder Y's to I's",
+          "sets": null,
+          "reps": null,
+          "unit": "set",
+          "load": null,
+          "how": "Lie face down with your arms lifted off the floor. Start with your arms straight, then bring them to your sides with the elbows bent at a right angle.",
+          "timers": []
+        },
+        {
+          "id": "w-sloper",
+          "name": "Sloper rollers",
+          "sets": null,
+          "reps": null,
+          "unit": "set",
+          "load": null,
+          "how": "Weighted roller on a rope. Spin it both ways so you train open grip and closed grip.",
+          "timers": [],
+          "needsLoad": true
+        }
+      ]
+    }
+  }
 }

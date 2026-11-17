@@ -48,7 +48,7 @@ const plural = (n, a, b) => `${n} ${n === 1 ? a : b}`;
 const sinceText = n => n == null ? 'never' : n === 0 ? 'today' : n === 1 ? 'yesterday' : `${n} days ago`;
 
 const params = new URLSearchParams(location.search);
-const state = { data: null, today: params.get('today') || localISO(), tab: 'today' };
+const state = { data: null, today: params.get('today') || localISO(), tab: 'today', sub: null };
 
 function store(key, val) {
   try { if (val === undefined) return localStorage.getItem(key); localStorage.setItem(key, val); } catch (e) { return null; }
@@ -617,9 +617,17 @@ function renderClimbs() {
 /* ---------- Plan ---------- */
 function renderPlan() {
   const { data } = state;
+  if (state.sub && data.workouts && data.workouts[state.sub]) return renderWorkout(state.sub);
   const root = h('div');
   const plan = h('ul', { class: 'plan' });
-  for (const p of data.plan) plan.append(h('li', {}, h('h3', {}, p.session), h('p', {}, p.what), h('p', { class: 'meta' }, `${p.load}. ${p.spacing}.`)));
+  for (const p of data.plan) {
+    const has = data.workouts && data.workouts[p.session];
+    const open = () => go('plan', true, p.session);
+    plan.append(h('li', has ? { class: 'tap', role: 'button', tabindex: '0', 'aria-label': `${p.session}. Open the workout`, onclick: open,
+      onkeydown: e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } } } : {},
+      h('h3', {}, p.session), h('p', {}, p.what), h('p', { class: 'meta' }, `${p.load}. ${p.spacing}.`),
+      has ? h('p', { class: 'open' }, 'Open the workout') : null));
+  }
   root.append(section('The plan', `Weekly targets: ${TYPES.map(t => `${t} ${data.targets[t]}`).join(', ')}.`, plan));
 
   const rules = h('ul', { class: 'rules' });
@@ -630,6 +638,113 @@ function renderPlan() {
   if (!standalone) root.append(h('p', { class: 'tip-install' }, h('b', {}, 'Add to your home screen. '), 'In Safari, tap Share, then Add to Home Screen. It opens full screen and keeps working when the gym has no signal.'));
   root.append(Log.settingsCard(() => mount()));
   root.append(h('p', { class: 'foot', style: 'margin-top:24px' }, `Data updated ${fmtLong(data.updated)}. Board screenshots: send them to Claude and they get added for you.`));
+  return root;
+}
+
+/* ---------- Workouts ---------- */
+const fmtClock = sec => { const s = Math.max(0, Math.ceil(sec)); return `${Math.floor(s / 60)}:${pad(s % 60)}`; };
+const unitText = (n, u) => `${n} ${u}${n === 1 ? '' : 's'}`;
+
+const T = { end: 0, timeout: 0, bar: null, ac: null, wake: null, label: '' };
+function releaseWake() { try { if (T.wake) T.wake.release(); } catch (e) { /* ignore */ } T.wake = null; }
+function stopTimer() {
+  clearTimeout(T.timeout); releaseWake();
+  if (T.bar) { T.bar.remove(); T.bar = null; }
+}
+function beep() {
+  try {
+    const ac = T.ac; if (!ac) return;
+    [0, 0.28, 0.56].forEach(t => {
+      const o = ac.createOscillator(), g = ac.createGain();
+      o.frequency.value = 880; o.connect(g); g.connect(ac.destination);
+      g.gain.setValueAtTime(0.0001, ac.currentTime + t);
+      g.gain.exponentialRampToValueAtTime(0.35, ac.currentTime + t + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + t + 0.2);
+      o.start(ac.currentTime + t); o.stop(ac.currentTime + t + 0.22);
+    });
+  } catch (e) { /* ignore */ }
+}
+function startTimer(label, seconds) {
+  stopTimer();
+  try {
+    T.ac = T.ac || new (window.AudioContext || window.webkitAudioContext)();
+    if (T.ac.state === 'suspended') T.ac.resume();
+  } catch (e) { T.ac = null; }
+  try { if (navigator.wakeLock) navigator.wakeLock.request('screen').then(l => { T.wake = l; }).catch(() => {}); } catch (e) { /* ignore */ }
+  const clock = h('span', { class: 't-clock' }, fmtClock(seconds));
+  const name = h('span', { class: 't-label' }, label);
+  const live = h('span', { class: 'sr', role: 'status' });
+  const more = h('button', { type: 'button', onclick: () => { T.end += 30000; tick(); } }, '+30 s');
+  const stop = h('button', { type: 'button', onclick: stopTimer }, 'Stop');
+  T.bar = h('div', { class: 'timer', role: 'timer', 'aria-label': 'Timer' }, h('div', { class: 't-text' }, name, clock), h('div', { class: 't-btns' }, more, stop), live);
+  document.body.append(T.bar);
+  T.end = Date.now() + seconds * 1000;
+  function tick() {
+    const left = (T.end - Date.now()) / 1000;
+    if (left <= 0) {
+      clock.textContent = '0:00'; name.textContent = 'Time is up'; live.textContent = 'Time is up';
+      T.bar.classList.add('done'); stop.textContent = 'Done'; more.hidden = true;
+      releaseWake(); beep();
+      try { if (navigator.vibrate) navigator.vibrate([200, 100, 200]); } catch (e) { /* ignore */ }
+      return;
+    }
+    clock.textContent = fmtClock(left);
+    T.timeout = setTimeout(tick, 250);
+  }
+  clearTimeout(T.timeout);
+  tick();
+}
+
+function exerciseCard(key, e, n) {
+  const { today } = state;
+  const doneKey = `done:${today}:${e.id}`;
+  let done = Math.min(Number(store(doneKey)) || 0, e.sets || 0);
+  const unit = e.unit || 'set';
+  const li = h('li', { class: 'ex' });
+  li.append(h('div', { class: 'ex-head' }, h('span', { class: 'ex-n', 'aria-hidden': 'true' }, String(n)), h('h3', {}, e.name)));
+  li.append(e.sets && e.reps
+    ? h('p', { class: 'dose' }, `${e.sets} × ${e.reps}`)
+    : h('p', { class: 'dose unset' }, 'Sets and reps not set yet'));
+  if (e.load || e.needsLoad) li.append(h('p', { class: 'load' }, 'Weight: ', e.load ? h('b', {}, e.load) : 'not set yet'));
+  if (e.how) li.append(h('p', { class: 'how' }, e.how));
+  if (e.sets) {
+    const count = h('p', { class: 'ex-count', 'aria-live': 'polite' });
+    const dots = h('div', { class: 'ticks', role: 'group', 'aria-label': `${unitText(e.sets, unit)} to tick off` });
+    const draw = () => {
+      dots.querySelectorAll('button').forEach((b, i) => b.setAttribute('aria-checked', String(i < done)));
+      count.textContent = `${done} of ${unitText(e.sets, unit)} done`;
+    };
+    for (let i = 0; i < e.sets; i++) {
+      dots.append(h('button', { type: 'button', role: 'checkbox', 'aria-label': `${unit} ${i + 1} of ${e.sets}`, onclick: () => {
+        done = done === i + 1 ? i : i + 1; store(doneKey, String(done)); draw();
+      } }, String(i + 1)));
+    }
+    draw();
+    li.append(dots, count);
+  }
+  if (e.timers && e.timers.length) {
+    const row = h('div', { class: 'timers' });
+    for (const t of e.timers) {
+      row.append(h('button', { type: 'button', class: t.work ? 'work' : '', onclick: () => startTimer(`${e.name}: ${t.label.toLowerCase()}`, t.s) },
+        h('span', { class: 'tl' }, t.label), h('span', { class: 'tt' }, fmtClock(t.s))));
+    }
+    li.append(row);
+  }
+  li.append(h('button', { type: 'button', class: 'btn quiet ex-edit', onclick: () => Log.exerciseSheet({ workout: key, exercise: e }) }, 'Edit sets, reps and weight'));
+  return li;
+}
+
+function renderWorkout(key) {
+  const { data, today } = state;
+  const w = data.workouts[key];
+  const root = h('div');
+  root.append(h('button', { type: 'button', class: 'back', onclick: () => go('plan', true) },
+    s('svg', { viewBox: '0 0 24 24', width: 20, height: 20, 'aria-hidden': 'true' }, s('path', { d: 'M15 5l-7 7 7 7', fill: 'none', stroke: 'currentColor', 'stroke-width': 2.4, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' })), 'Plan'));
+  root.append(h('section', { class: 'section tight' }, h('h2', {}, w.title), w.intro ? h('p', { class: 'sub' }, w.intro) : null));
+  const list = h('ol', { class: 'workout' });
+  w.exercises.forEach((e, i) => list.append(exerciseCard(key, e, i + 1)));
+  root.append(list);
+  root.append(h('button', { type: 'button', class: 'btn primary block cta', onclick: () => Log.sessionSheet({ today, readiness: getReadiness(today), suggested: TYPES.includes(key) ? key : null }) }, 'Log this session'));
   return root;
 }
 
@@ -646,14 +761,15 @@ function mount() {
   view.replaceChildren(VIEWS[state.tab]());
   window.scrollTo(0, y);
 }
-function go(tab, fresh) {
+function go(tab, fresh, sub) {
   state.tab = VIEWS[tab] ? tab : 'today';
+  state.sub = state.tab === 'plan' && sub && state.data.workouts && state.data.workouts[sub] ? sub : null;
   document.querySelectorAll('.tabs button').forEach(b => {
     if (b.dataset.tab === state.tab) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
   });
   view.replaceChildren(VIEWS[state.tab]());
   if (fresh) window.scrollTo(0, 0);
-  history.replaceState(null, '', location.pathname + location.search + '#' + state.tab);
+  history.replaceState(null, '', location.pathname + location.search + '#' + state.tab + (state.sub ? '/' + state.sub.toLowerCase() : ''));
 }
 
 document.querySelectorAll('.tabs button').forEach(b => b.addEventListener('click', () => go(b.dataset.tab, true)));
@@ -666,7 +782,9 @@ function start(data) {
   state.data = data;
   Log.onChange = d => { state.data = d; renderHeader(); mount(); };
   renderHeader();
-  go(location.hash.slice(1) || 'today', false);
+  const [t0, s0] = location.hash.slice(1).split('/');
+  const sub0 = Object.keys(data.workouts || {}).find(k => k.toLowerCase() === (s0 || '').toLowerCase());
+  go(t0 || 'today', false, sub0);
   Log.init();
 }
 fetch('data.json', { cache: 'no-cache' })

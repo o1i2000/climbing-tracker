@@ -281,3 +281,38 @@ body.noscroll { overflow: hidden; }
 details.fold.how { margin-top: 14px; }
 details.fold.how > summary { font-size: 16px; min-height: 40px; }
 .sheet-sub + .f { margin-top: 10px; }
+
+/* ---------- workouts ---------- */
+.plan li.tap { cursor: pointer; }
+.plan li.tap:active { background: var(--wash); }
+.plan .open { margin-top: 8px; font-size: 14px; font-weight: 650; display: flex; align-items: center; gap: 6px; }
+.plan .open::after { content: ""; width: 8px; height: 8px; border-right: 2px solid currentColor; border-top: 2px solid currentColor; transform: rotate(45deg); }
+.back { display: inline-flex; align-items: center; gap: 4px; min-height: 44px; margin: 6px 0 -8px -6px; padding: 0 10px 0 4px; border: 0; background: transparent; font-weight: 650; font-size: 16px; cursor: pointer; }
+.section.tight { margin-top: 10px; }
+.workout { list-style: none; padding: 0; margin: 18px 0 0; }
+.ex { padding: 18px 0 20px; border-top: 1px solid var(--grid); }
+.ex-head { display: flex; align-items: center; gap: 12px; }
+.ex-head h3 { font-size: 20px; letter-spacing: -0.015em; }
+.ex-n { flex: none; width: 28px; height: 28px; border-radius: 14px; background: var(--wash); display: grid; place-items: center; font-size: 14px; font-weight: 700; }
+.dose { margin-top: 10px; font-size: 30px; line-height: 1.1; font-weight: 700; letter-spacing: -0.02em; }
+.dose.unset { font-size: 16px; font-weight: 600; color: var(--ink-2); letter-spacing: 0; }
+.load { margin-top: 6px; font-size: 15px; }
+.how { margin-top: 8px; font-size: 15px; color: var(--ink-2); max-width: 60ch; }
+.ticks { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.ticks button { width: 46px; height: 46px; border-radius: 23px; border: 1.5px solid var(--axis); background: transparent; font-weight: 700; font-size: 16px; cursor: pointer; font-variant-numeric: tabular-nums; }
+.ticks button[aria-checked="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+.ex-count { margin-top: 8px; font-size: 13px; color: var(--ink-2); }
+.timers { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.timers button { display: flex; flex-direction: column; align-items: flex-start; gap: 0; min-height: 54px; padding: 6px 14px; border-radius: 14px; border: 1.5px solid var(--axis); background: transparent; cursor: pointer; text-align: left; }
+.timers .tl { font-size: 12.5px; color: var(--ink-2); }
+.timers .tt { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.timers button.work { border-color: var(--s1); }
+.ex-edit { margin-top: 12px; }
+
+.timer { position: fixed; z-index: 70; top: calc(8px + env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); width: min(calc(100% - 16px), 520px); display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px 10px 16px; border-radius: 18px; background: var(--ink); color: var(--surface); box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25); }
+.t-text { display: flex; flex-direction: column; min-width: 0; }
+.t-label { font-size: 13px; line-height: 1.25; opacity: 0.85; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.t-clock { font-size: 34px; line-height: 1.05; font-weight: 700; font-variant-numeric: tabular-nums; }
+.t-btns { display: flex; gap: 8px; flex: none; }
+.t-btns button { min-height: 44px; padding: 0 14px; border-radius: 12px; border: 1.5px solid currentColor; background: transparent; color: inherit; font-weight: 650; cursor: pointer; }
+.timer.done { background: #0a7a0a; color: #fff; }

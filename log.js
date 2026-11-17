@@ -65,6 +65,10 @@ function applyOp(d, op) {
     if (l && !l.climbs.some(c => c.name === op.climb.name)) {
       l.climbs.push({ name: op.climb.name, grade: op.climb.grade, sent: false, dateSent: null, tries: null, note: '' });
     }
+  } else if (op.op === 'setExercise') {
+    const w = d.workouts && d.workouts[op.workout];
+    const e = w && w.exercises.find(x => x.id === op.exercise);
+    if (e) Object.assign(e, op.fields);
   } else if (op.op === 'deleteClimb') {
     const l = d.lists.find(x => x.id === op.list);
     if (l) l.climbs = l.climbs.filter(c => c.name !== op.name);
@@ -80,6 +84,7 @@ const describe = op => ({
   setClimb: () => `${op.fields.sent === false ? 'unmark' : 'mark'} ${op.name}`,
   addClimb: () => `add climb ${op.climb.name}`,
   deleteClimb: () => `remove climb ${op.name}`,
+  setExercise: () => 'edit an exercise',
 }[op.op] || (() => op.op))();
 
 /* ---------- data held on this phone ---------- */
@@ -450,6 +455,24 @@ function addClimbSheet({ list }) {
   });
 }
 
+/* ---------- Edit an exercise ---------- */
+function exerciseSheet({ workout, exercise }) {
+  sheet(exercise.name, close => {
+    const sets = h('input', { type: 'number', min: '1', max: '30', step: '1', inputmode: 'numeric', placeholder: 'e.g. 4', value: exercise.sets == null ? '' : String(exercise.sets) });
+    const reps = h('input', { type: 'text', maxlength: '40', autocomplete: 'off', placeholder: 'e.g. 8 each side', value: exercise.reps || '' });
+    const load = h('input', { type: 'text', maxlength: '40', autocomplete: 'off', placeholder: 'e.g. 12 kg', value: exercise.load || '' });
+    return h('div', {},
+      h('div', { class: 'pair' }, field('Sets', sets), field('Reps or time', reps)),
+      field('Weight', load, 'Leave empty if it is bodyweight or not set yet.'),
+      saveNote(),
+      h('div', { class: 'sheet-actions' }, h('button', { type: 'button', class: 'btn primary block', onclick: () => {
+        const n = sets.value === '' ? null : Math.max(1, Math.round(Number(sets.value)));
+        close();
+        submit([{ id: uid(), op: 'setExercise', at: isoToday(), workout, exercise: exercise.id, fields: { sets: n, reps: reps.value.trim() || null, load: load.value.trim() || null } }]);
+      } }, 'Save')));
+  });
+}
+
 /* ---------- Plan: saving settings ---------- */
 function settingsCard(rerender) {
   const has = !!ls.get(KEY.token);
@@ -496,7 +519,7 @@ const api = {
   resolve, current, submit, flush, init,
   pendingCount: () => pending().length,
   hasToken: () => !!ls.get(KEY.token),
-  sessionSheet, testSheet, climbSheet, addClimbSheet, settingsCard, confirmButton, toast,
+  sessionSheet, testSheet, climbSheet, addClimbSheet, exerciseSheet, settingsCard, confirmButton, toast,
   _parseTindeq: parseTindeq, _applyOp: applyOp,
 };
 window.Log = api;
