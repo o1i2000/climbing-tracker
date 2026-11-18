@@ -48,7 +48,7 @@ const plural = (n, a, b) => `${n} ${n === 1 ? a : b}`;
 const sinceText = n => n == null ? 'never' : n === 0 ? 'today' : n === 1 ? 'yesterday' : `${n} days ago`;
 
 const params = new URLSearchParams(location.search);
-const state = { data: null, today: params.get('today') || localISO(), tab: 'today', sub: null };
+const state = { data: null, today: params.get('today') || localISO(), tab: 'today', sub: null, back: null };
 
 function store(key, val) {
   try { if (val === undefined) return localStorage.getItem(key); localStorage.setItem(key, val); } catch (e) { return null; }
@@ -56,6 +56,19 @@ function store(key, val) {
 }
 
 /* ---------- session logic ---------- */
+const shortName = n => n.split(':')[0];
+const opId = () => Log.uid();
+
+/* Exercises ticked off on their own count for the week (last 7 days). Ticking all of them counts as the session. */
+function partsFor(data, key, day) {
+  const w = data.workouts && data.workouts[key];
+  if (!w || !TRAIN.includes(key)) return null;
+  const rows = (data.parts || []).filter(p => p.session === key && p.date <= day && diffDays(day, p.date) < 7);
+  const ids = new Set(rows.map(p => p.exercise));
+  const done = w.exercises.filter(e => ids.has(e.id));
+  return { total: w.exercises.length, done: done.length, left: w.exercises.filter(e => !ids.has(e.id)), rows };
+}
+
 function stateAt(data, day) {
   const out = {};
   for (const t of TYPES) {
@@ -66,6 +79,7 @@ function stateAt(data, day) {
       count7: mine.filter(x => diffDays(day, x.date) < 7).length,
       target: data.targets[t],
       since: last == null ? null : diffDays(day, last),
+      parts: partsFor(data, t, day),
     };
   }
   return out;
@@ -74,6 +88,7 @@ function stateAt(data, day) {
 function statusFor(t, st, day) {
   const x = st[t];
   if (x.count7 >= x.target) return { kind: 'done' };
+  if (x.parts && x.parts.total && x.parts.done === x.parts.total) return { kind: 'done', byParts: true };
   if (HEAVY.includes(t)) {
     const other = st[t === 'Finger' ? 'Board' : 'Finger'];
     if (other.last && diffDays(day, other.last) < 2) return { kind: 'wait', until: addDays(other.last, 2), after: other.type };
@@ -120,6 +135,10 @@ function recommend(data, today, readiness) {
       const lead = logged.sort((a, b) => st[b].since - st[a].since)[0];
       why.push(`${lead} was last logged ${fmt(st[lead].last)}, ${sinceText(diffDays(day, st[lead].last))}.`);
     }
+  }
+  for (const t of picks) {
+    const p = st[t].parts;
+    if (p && p.done && p.done < p.total) why.push(`${t}: ${p.done} of ${p.total} parts already done. Left: ${p.left.map(e => shortName(e.name).toLowerCase()).join(', ')}.`);
   }
   if (!picks.length) why.unshift(light ? '' : 'Every session is done for the week or waiting on a gap.');
   for (const g of groups) {
@@ -189,6 +208,8 @@ function renderToday() {
   root.append(h('button', { type: 'button', class: 'btn primary block cta', onclick: () => Log.sessionSheet({
     today, readiness, suggested: rec.picks.length === 1 ? rec.picks : (rec.picks.length ? [] : ['Stretching']),
   }) }, 'Log a session'));
+  const altBtn = (label, types) => h('button', { type: 'button', class: 'btn quiet', onclick: () => Log.sessionSheet({ today, readiness, suggested: types }) }, label);
+  root.append(h('div', { class: 'alt-row' }, h('span', {}, 'Too tired for the full session? Log instead:'), altBtn('Normal climb', ['Climb']), altBtn('Stretching', ['Stretching'])));
 
   // queue: grouped by day, so Finger and Pull sit together but stay separate tasks
   const st = stateAt(data, today);
@@ -208,29 +229,48 @@ function renderToday() {
   for (const r of rows) {
     const k = r.status.kind;
     const label = k === 'go' ? 'Go' : k === 'wait' ? `Wait until ${fmt(r.status.until)}` : 'Done this week';
-    const filled = Math.min(r.st.count7, r.st.target);
-    queue.append(h('li', {},
+    const filled = k === 'done' ? r.st.target : Math.min(r.st.count7, r.st.target);
+    const p = r.st.parts;
+    const bits = [r.st.since == null ? 'Not logged yet' : `Last done ${sinceText(r.st.since)}`];
+    if (p && p.done) bits.push(k === 'done' && r.st.count7 < r.st.target ? 'every part ticked off' : `${p.done} of ${p.total} parts ticked off`);
+    if (r.mates.length) bits.push(`Same day as ${r.mates.join(' and ')}`);
+    const hasW = data.workouts && data.workouts[r.t];
+    const open = () => go('plan', true, r.t, 'today');
+    queue.append(h('li', hasW ? { class: 'tap', role: 'button', tabindex: '0', 'aria-label': `${r.t}. Open the workout`, onclick: open,
+      onkeydown: e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } } } : {},
       h('span', { class: 'ico' }, ringIcon(k, 26)),
       h('span', { class: 'name' }, r.t),
       h('span', { class: `state ${k}` }, label),
-      h('span', { class: 'since' }, (r.st.since == null ? 'Not logged yet' : `Last done ${sinceText(r.st.since)}`) + (r.mates.length ? `. Same day as ${r.mates.join(' and ')}` : '')),
+      h('span', { class: 'since' }, bits.join('. ')),
       h('span', { class: 'dots', 'aria-label': `${filled} of ${r.st.target} this week` }, '●'.repeat(filled) + '○'.repeat(r.st.target - filled))));
   }
   const shared = groupsOf(data).filter(g => g.length > 1).map(g => `${g.join(' and ')} share a day.`).join(' ');
-  root.append(section('This week', `Finger and Board need two days between them. ${shared} A week is the last 7 days.`.replace('  ', ' '), queue));
+  root.append(section('This week', `Finger and Board need two days between them. ${shared} A week is the last 7 days. Tap Pull or Weakness to open the workout and tick off single exercises.`.replace('  ', ' '), queue));
 
-  // recent sessions, newest first
-  const recent = [...data.sessions].filter(x => x.date <= today).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5);
-  if (recent.length) {
+  // recent activity (sessions and single exercises), newest first
+  const items = [
+    ...data.sessions.filter(x => x.date <= today).map(x => ({ date: x.date, s: x })),
+    ...(data.parts || []).filter(x => x.date <= today).map(x => ({ date: x.date, p: x })),
+  ].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 6);
+  if (items.length) {
     const list = h('ul', { class: 'recent' });
-    for (const x of recent) {
-      const extra = [x.title && x.title !== x.type ? x.title : null, x.readiness ? `readiness ${x.readiness}` : null].filter(Boolean).join(', ');
-      list.append(h('li', {},
-        h('span', { class: 'rt' }, `${x.type}, ${fmt(x.date)}`),
-        extra ? h('span', { class: 'rm' }, extra) : null,
-        x.id ? Log.confirmButton('Remove', 'Tap again to remove', () => Log.submit([{ id: 'o' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7), op: 'deleteSession', at: localISO(), target: x.id }])) : null));
+    for (const it of items) {
+      if (it.s) {
+        const x = it.s;
+        const extra = [x.title && x.title !== x.type ? x.title : null, x.readiness ? `readiness ${x.readiness}` : null].filter(Boolean).join(', ');
+        list.append(h('li', {},
+          h('span', { class: 'rt' }, `${x.type}, ${fmt(x.date)}`),
+          extra ? h('span', { class: 'rm' }, extra) : null,
+          x.id ? Log.confirmButton('Remove', 'Tap again to remove', () => Log.submit([{ id: opId(), op: 'deleteSession', at: localISO(), target: x.id }])) : null));
+      } else {
+        const x = it.p;
+        list.append(h('li', {},
+          h('span', { class: 'rt' }, `${x.session} exercise, ${fmt(x.date)}`),
+          h('span', { class: 'rm' }, x.name + (x.detail ? `, ${x.detail}` : '')),
+          Log.confirmButton('Remove', 'Tap again to remove', () => Log.submit([{ id: opId(), op: 'deletePart', at: localISO(), target: x.id }]))));
+      }
     }
-    root.append(section('Recent sessions', 'Logged one by mistake? Remove it here.', list));
+    root.append(section('Recent activity', 'Logged something by mistake? Remove it here.', list));
   }
 
   // figures
@@ -255,7 +295,7 @@ function activityGrid(data, today) {
   const CW = 34, RH = 26, LX = 16, TY = 20;
   const W = LX + 8 * CW, H = TY + 7 * RH;
   const svg = s('svg', { viewBox: `0 0 ${W} ${H}`, width: '100%', role: 'img',
-    'aria-label': 'Calendar of the last 8 weeks. Filled circles are training days, rings are stretching only.' });
+    'aria-label': 'Calendar of the last 8 weeks. Filled circles are training days, rings are stretching or single exercises only.' });
   svg.style.maxWidth = '420px';
   svg.style.display = 'block';
   ['M', 'W', 'F'].forEach((d, i) => svg.append(s('text', { x: 0, y: TY + (i * 2) * RH + 8 + 4, fill: 'var(--muted)', 'font-size': 11, 'font-family': 'var(--font)' }, d)));
@@ -273,11 +313,12 @@ function activityGrid(data, today) {
       const cx = LX + w * CW + 11, cy = TY + d * RH + 8;
       const ses = data.sessions.filter(x => x.date === iso);
       const train = ses.filter(x => x.type !== 'Stretching');
+      const bits = (data.parts || []).filter(x => x.date === iso);
       let mark;
       if (train.length) mark = s('circle', { cx, cy, r: 8.5, fill: 'var(--ink)' });
-      else if (ses.length) mark = s('circle', { cx, cy, r: 7.5, fill: 'none', stroke: 'var(--ink)', 'stroke-width': 2 });
+      else if (ses.length || bits.length) mark = s('circle', { cx, cy, r: 7.5, fill: 'none', stroke: 'var(--ink)', 'stroke-width': 2 });
       else mark = s('circle', { cx, cy, r: 2.5, fill: 'var(--axis)' });
-      mark.append(s('title', {}, `${fmt(iso)}: ${ses.length ? [...new Set(ses.map(x => x.type))].join(', ') : 'no session'}`));
+      mark.append(s('title', {}, `${fmt(iso)}: ${ses.length || bits.length ? [...new Set([...ses.map(x => x.type), ...bits.map(x => x.name)])].join(', ') : 'no session'}`));
       svg.append(mark);
       if (iso === today) svg.append(s('circle', { cx, cy, r: 12, fill: 'none', stroke: 'var(--s1)', 'stroke-width': 2 }));
     }
@@ -286,7 +327,7 @@ function activityGrid(data, today) {
   const swatch = (inner) => { const v = s('svg', { width: 16, height: 16, viewBox: '0 0 16 16', 'aria-hidden': 'true' }, inner); v.style.verticalAlign = '-3px'; v.style.marginRight = '6px'; return v; };
   return h('div', {}, svg, h('div', { class: 'legend' },
     key(swatch(s('circle', { cx: 8, cy: 8, r: 6, fill: 'var(--ink)' })), 'Training'),
-    key(swatch(s('circle', { cx: 8, cy: 8, r: 5.5, fill: 'none', stroke: 'var(--ink)', 'stroke-width': 2 })), 'Stretching only'),
+    key(swatch(s('circle', { cx: 8, cy: 8, r: 5.5, fill: 'none', stroke: 'var(--ink)', 'stroke-width': 2 })), 'Stretching or single exercises'),
     key(swatch(s('circle', { cx: 8, cy: 8, r: 6.5, fill: 'none', stroke: 'var(--s1)', 'stroke-width': 2 })), 'Today')));
 }
 
@@ -721,7 +762,19 @@ function startTimer(label, seconds) {
   tick();
 }
 
-function exerciseBody(key, e, parent) {
+function partControl(key, e, detail) {
+  const { data, today } = state;
+  const hits = (data.parts || []).filter(p => p.session === key && p.exercise === e.id && p.date <= today && diffDays(today, p.date) < 7).sort((a, b) => b.date.localeCompare(a.date));
+  if (hits.length) {
+    return h('div', { class: 'part done' },
+      h('span', { class: 'part-label' }, ringIcon('done', 22), `Ticked off ${fmt(hits[0].date)}`),
+      h('button', { type: 'button', class: 'btn quiet', onclick: () => Log.submit(hits.map(x => ({ id: opId(), op: 'deletePart', at: localISO(), target: x.id }))) }, 'Undo'));
+  }
+  return h('div', { class: 'part' }, h('button', { type: 'button', class: 'btn', onclick: () => Log.submit([{ id: opId(), op: 'addPart', at: localISO(),
+    part: { date: today, session: key, exercise: e.id, name: shortName(e.name), detail: detail() || undefined } }]) }, 'Tick off for this week'));
+}
+
+function exerciseBody(key, e, parent, part) {
   const { today } = state;
   const doneKey = `done:${today}:${e.id}`;
   let done = Math.min(Number(store(doneKey)) || 0, e.sets || 0);
@@ -755,6 +808,7 @@ function exerciseBody(key, e, parent) {
     }
     out.push(row);
   }
+  if (part) out.push(part);
   out.push(h('button', { type: 'button', class: 'btn quiet ex-edit', onclick: () => Log.exerciseSheet(parent ? { workout: key, exercise: parent, variant: e } : { workout: key, exercise: e }) }, 'Edit sets, reps and weight'));
   return out;
 }
@@ -780,14 +834,14 @@ function chosenVariant(key, e) {
 function exerciseCard(key, e, n) {
   const li = h('li', { class: 'ex' });
   li.append(h('div', { class: 'ex-head' }, h('span', { class: 'ex-n', 'aria-hidden': 'true' }, String(n)), h('h3', {}, e.name)));
-  if (!e.variants) { li.append(...exerciseBody(key, e, null)); return li; }
+  if (!e.variants) { li.append(...exerciseBody(key, e, null, partControl(key, e, () => null))); return li; }
   const last = lastVariant(key, e);
   const body = h('div', { class: 'variant-body' });
   const row = h('div', { class: 'chips', role: 'radiogroup', 'aria-label': 'Choose one for today' });
   let cur = chosenVariant(key, e);
   const draw = () => {
     row.querySelectorAll('button').forEach(b => b.setAttribute('aria-checked', String(b.dataset.v === cur.id)));
-    body.replaceChildren(...exerciseBody(key, cur, e));
+    body.replaceChildren(...exerciseBody(key, cur, e, partControl(key, e, () => cur.name)));
   };
   for (const v of e.variants) row.append(h('button', { type: 'button', role: 'radio', 'data-v': v.id, onclick: () => { cur = v; store(variantKey(e), v.id); draw(); } }, v.name));
   if (last) li.append(h('p', { class: 'how', style: 'margin-top:8px' }, `Last time: ${last.v.name}, ${fmt(last.date)}.`));
@@ -800,9 +854,12 @@ function renderWorkout(key) {
   const { data, today } = state;
   const w = data.workouts[key];
   const root = h('div');
-  root.append(h('button', { type: 'button', class: 'back', onclick: () => go('plan', true) },
-    s('svg', { viewBox: '0 0 24 24', width: 20, height: 20, 'aria-hidden': 'true' }, s('path', { d: 'M15 5l-7 7 7 7', fill: 'none', stroke: 'currentColor', 'stroke-width': 2.4, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' })), 'Plan'));
-  root.append(h('section', { class: 'section tight' }, h('h2', {}, w.title), w.intro ? h('p', { class: 'sub' }, w.intro) : null));
+  const backTo = state.back === 'today' ? 'today' : 'plan';
+  root.append(h('button', { type: 'button', class: 'back', onclick: () => go(backTo, true) },
+    s('svg', { viewBox: '0 0 24 24', width: 20, height: 20, 'aria-hidden': 'true' }, s('path', { d: 'M15 5l-7 7 7 7', fill: 'none', stroke: 'currentColor', 'stroke-width': 2.4, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' })), backTo === 'today' ? 'Today' : 'Plan'));
+  const pr = partsFor(data, key, today);
+  root.append(h('section', { class: 'section tight' }, h('h2', {}, w.title), w.intro ? h('p', { class: 'sub' }, w.intro) : null,
+    pr && pr.done ? h('p', { class: 'progress' }, `This week: ${pr.done} of ${pr.total} exercises ticked off.` + (pr.done === pr.total ? ` That counts as a full ${key} session for the week.` : '')) : null));
   const list = h('ol', { class: 'workout' });
   w.exercises.forEach((e, i) => list.append(exerciseCard(key, e, i + 1)));
   root.append(list);
@@ -826,7 +883,8 @@ function mount() {
   view.replaceChildren(VIEWS[state.tab]());
   window.scrollTo(0, y);
 }
-function go(tab, fresh, sub) {
+function go(tab, fresh, sub, from) {
+  state.back = from || null;
   state.tab = VIEWS[tab] ? tab : 'today';
   state.sub = state.tab === 'plan' && sub && state.data.workouts && state.data.workouts[sub] ? sub : null;
   document.querySelectorAll('.tabs button').forEach(b => {

@@ -534,6 +534,12 @@
       "spacing": "Light day: best the day after a heavy session"
     },
     {
+      "session": "Climb",
+      "what": "A normal climbing session, for days you are too tired for the board. Counts as a training day, but does not tick off Finger, Board, Pull or Weakness.",
+      "load": "Fingers: medium",
+      "spacing": "Any day; does not use up the Finger and Board gap"
+    },
+    {
       "session": "Stretching",
       "what": "Three 10–15 minute slots a week, on rest days or after sessions.",
       "load": "Low",
@@ -592,9 +598,17 @@
     {
       "title": "Assumption",
       "text": "Strength figures are Tindeq peak pull (force, not added weight). Holding a one-arm hang needs margin over a one-off peak."
+    },
+    {
+      "title": "Tired day",
+      "text": "Log a normal climb instead of a board session. It counts as a training day, and Board stays open for the week."
+    },
+    {
+      "title": "Single exercises",
+      "text": "Open Pull or Weakness and tick off the easy exercises one by one. They count for the week (last 7 days). Tick off every exercise and the whole session counts as done."
     }
   ],
-  "rev": 6,
+  "rev": 7,
   "workouts": {
     "Weakness": {
       "title": "Weakness session",
@@ -772,5 +786,6 @@
       "Weakness"
     ]
   ],
-  "planNote": "Finger and Pull share one day, so training takes three days a week and the rest are free for climbing."
+  "planNote": "Finger and Pull share one day, so training takes three days a week and the rest are free for climbing.",
+  "parts": []
 }

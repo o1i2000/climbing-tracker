@@ -6,7 +6,7 @@
 
 const CFG = { repo: 'o1i2000/climbing-tracker', branch: 'main', path: 'data.json' };
 const KEY = { token: 'gh-token', pending: 'pending-ops', cache: 'data-cache' };
-const TYPES = ['Finger', 'Board', 'Pull', 'Weakness', 'Stretching'];
+const TYPES = ['Finger', 'Board', 'Pull', 'Weakness', 'Climb', 'Stretching'];
 const LB = 0.45359237;
 const MO = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -70,6 +70,11 @@ function applyOp(d, op) {
     const e = w && w.exercises.find(x => x.id === op.exercise);
     const t = e && (op.variant ? (e.variants || []).find(v => v.id === op.variant) : e);
     if (t) Object.assign(t, op.fields);
+  } else if (op.op === 'addPart') {
+    d.parts = d.parts || [];
+    if (!d.parts.some(x => x.id === op.id || (x.session === op.part.session && x.exercise === op.part.exercise && x.date === op.part.date))) d.parts.push({ ...op.part, id: op.id });
+  } else if (op.op === 'deletePart') {
+    d.parts = (d.parts || []).filter(x => x.id !== op.target);
   } else if (op.op === 'deleteClimb') {
     const l = d.lists.find(x => x.id === op.list);
     if (l) l.climbs = l.climbs.filter(c => c.name !== op.name);
@@ -86,6 +91,8 @@ const describe = op => ({
   addClimb: () => `add climb ${op.climb.name}`,
   deleteClimb: () => `remove climb ${op.name}`,
   setExercise: () => 'edit an exercise',
+  addPart: () => `tick off ${op.part.name}`,
+  deletePart: () => 'undo a tick',
 }[op.op] || (() => op.op))();
 
 /* ---------- data held on this phone ---------- */
@@ -534,5 +541,6 @@ const api = {
   sessionSheet, testSheet, climbSheet, addClimbSheet, exerciseSheet, settingsCard, confirmButton, toast,
   _parseTindeq: parseTindeq, _applyOp: applyOp,
 };
+api.uid = uid;
 window.Log = api;
 })();

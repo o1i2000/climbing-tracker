@@ -321,3 +321,14 @@ details.fold.how > summary { font-size: 16px; min-height: 40px; }
 @media (min-width: 420px) { .hero-title.long { font-size: 46px; } }
 .variant-body { margin-top: 4px; }
 .ex > .chips { margin-top: 12px; }
+
+/* ---------- partial ticks, quick options ---------- */
+.alt-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; font-size: 14px; color: var(--ink-2); }
+.alt-row > span { flex: 1 0 100%; }
+.alt-row .btn { flex: 1 1 0; min-height: 46px; padding-left: 10px; padding-right: 10px; }
+.queue li.tap { cursor: pointer; }
+.queue li.tap:active { background: var(--wash); }
+.progress { margin-top: 10px; font-size: 15px; font-weight: 650; }
+.part { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+.part .btn:not(.quiet) { min-height: 46px; }
+.part-label { display: inline-flex; align-items: center; gap: 8px; font-weight: 650; font-size: 15px; }

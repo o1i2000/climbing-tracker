@@ -39,3 +39,10 @@ group waits if its heavy member (Finger) is inside the 2-day gap after Board.
 `workouts.<Session>.exercises[]` drive the screens opened from the Plan tab. An exercise has `sets`, `reps`, `unit`,
 `load`, `how` and `timers`. An exercise with `variants` is a "pick one" (Pull's main lift); the session title is
 prefilled with the variant name so the next visit can show what was done last.
+
+## Climb days and single exercises
+- `Climb` is a session type for a normal climbing session (a tired day instead of Board). It counts as a training day
+  in the load figures and the calendar, is not heavy, and ticks off no weekly target.
+- `parts[]` holds exercises ticked off on their own: `{id, date, session, exercise, name, detail?}`. Ops: `addPart`,
+  `deletePart`. Parts from the last 7 days count towards that session's week (`partsFor`). Ticking every exercise in a
+  workout makes `statusFor` return done, as if the session had been logged. Logging the whole session still works as before.
