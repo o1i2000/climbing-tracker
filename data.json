@@ -600,7 +600,7 @@
       "text": "Open Pull or Weakness and tick off the easy exercises one by one. They count for the week (last 7 days). Tick off every exercise and the whole session counts as done."
     }
   ],
-  "rev": 11,
+  "rev": 12,
   "workouts": {
     "Weakness": {
       "title": "Weakness session",
@@ -780,6 +780,14 @@
     ]
   ],
   "planNote": "Finger and Pull share one day, so training takes three days a week and the rest are free for climbing.",
-  "parts": [],
+  "parts": [
+    {
+      "date": "2026-11-18",
+      "session": "Pull",
+      "exercise": "p-iyt",
+      "name": "I Y T shoulder raises",
+      "id": "omwmh2sh2zb4ll"
+    }
+  ],
   "setLog": []
 }
