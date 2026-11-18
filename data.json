@@ -600,7 +600,7 @@
       "text": "Open Pull or Weakness and tick off the easy exercises one by one. They count for the week (last 7 days). Tick off every exercise and the whole session counts as done."
     }
   ],
-  "rev": 12,
+  "rev": 13,
   "workouts": {
     "Weakness": {
       "title": "Weakness session",
@@ -684,10 +684,10 @@
         {
           "id": "w-sloper",
           "name": "Sloper rollers",
-          "sets": null,
-          "reps": null,
+          "sets": 5,
+          "reps": "1 each side",
           "unit": "set",
-          "load": null,
+          "load": "25kg",
           "how": "Weighted roller on a rope. Spin it both ways so you train open grip and closed grip.",
           "timers": [],
           "needsLoad": false,
