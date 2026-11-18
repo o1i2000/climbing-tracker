@@ -73,6 +73,11 @@ function applyOp(d, op) {
   } else if (op.op === 'addPart') {
     d.parts = d.parts || [];
     if (!d.parts.some(x => x.id === op.id || (x.session === op.part.session && x.exercise === op.part.exercise && x.date === op.part.date))) d.parts.push({ ...op.part, id: op.id });
+  } else if (op.op === 'addSetLog') {
+    d.setLog = d.setLog || [];
+    if (!d.setLog.some(x => x.id === op.id)) d.setLog.push({ ...op.entry, id: op.id });
+  } else if (op.op === 'deleteSetLog') {
+    d.setLog = (d.setLog || []).filter(x => x.id !== op.target);
   } else if (op.op === 'deletePart') {
     d.parts = (d.parts || []).filter(x => x.id !== op.target);
   } else if (op.op === 'deleteClimb') {
@@ -93,6 +98,8 @@ const describe = op => ({
   setExercise: () => 'edit an exercise',
   addPart: () => `tick off ${op.part.name}`,
   deletePart: () => 'undo a tick',
+  addSetLog: () => `log a set of ${op.entry.name}`,
+  deleteSetLog: () => 'remove a logged set',
 }[op.op] || (() => op.op))();
 
 /* ---------- data held on this phone ---------- */

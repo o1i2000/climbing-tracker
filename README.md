@@ -46,3 +46,10 @@ prefilled with the variant name so the next visit can show what was done last.
 - `parts[]` holds exercises ticked off on their own: `{id, date, session, exercise, name, detail?}`. Ops: `addPart`,
   `deletePart`. Parts from the last 7 days count towards that session's week (`partsFor`). Ticking every exercise in a
   workout makes `statusFor` return done, as if the session had been logged. Logging the whole session still works as before.
+
+## Weight and time tracking
+An exercise with `track: true` (currently Sloper rollers) shows editable Weight (kg) and Time (seconds) fields, a
+Start timer button that counts down the entered time, and Save this set. Saved sets live in `setLog[]`
+(`{id, date, session, exercise, name, load, seconds}`, ops `addSetLog` / `deleteSetLog`) and appear newest first under
+Previous sets. The fields start from the last saved set, and unsaved typing is kept in `track:<exercise id>` in the
+browser so a re-render does not wipe it. Set `track: true` on any other exercise in `data.json` to switch it on there.

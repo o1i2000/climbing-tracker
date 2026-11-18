@@ -332,3 +332,11 @@ details.fold.how > summary { font-size: 16px; min-height: 40px; }
 .part { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
 .part .btn:not(.quiet) { min-height: 46px; }
 .part-label { display: inline-flex; align-items: center; gap: 8px; font-weight: 650; font-size: 15px; }
+
+/* ---------- tracked exercise: weight, time, previous sets ---------- */
+.track { margin-top: 16px; padding: 4px 14px 16px; background: var(--wash); border-radius: 14px; }
+.track .f { margin-top: 12px; }
+.track-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+.track-actions .btn { min-height: 48px; }
+.tlog h4 { margin-top: 18px; font-size: 15px; font-weight: 700; }
+.tlog .fold { margin-top: 6px; }

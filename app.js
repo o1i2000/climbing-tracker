@@ -774,6 +774,64 @@ function partControl(key, e, detail) {
     part: { date: today, session: key, exercise: e.id, name: shortName(e.name), detail: detail() || undefined } }]) }, 'Tick off for this week'));
 }
 
+const kgText = v => `${Number.isInteger(v) ? v : Number(v.toFixed(2))} kg`;
+
+/* Weight and time you can edit, a timer that uses that time, and the sets you logged before. Switched on by `track: true`. */
+function trackPanel(key, e) {
+  const { data, today } = state;
+  const rows = (data.setLog || []).filter(x => x.exercise === e.id && x.date <= today).reverse().sort((x, y) => y.date.localeCompare(x.date));
+  const last = rows[0];
+  const draftKey = `track:${e.id}`;
+  let draft = null;
+  try { draft = JSON.parse(store(draftKey) || 'null'); } catch (x) { draft = null; }
+  const startVal = (d, k) => draft ? draft[d] : (last && last[k] != null ? String(last[k]) : '');
+  const wIn = h('input', { type: 'number', inputmode: 'decimal', min: '0', max: '200', step: '0.5', placeholder: 'e.g. 10', value: startVal('load', 'load') });
+  const sIn = h('input', { type: 'number', inputmode: 'numeric', min: '1', max: '3600', step: '1', placeholder: 'e.g. 60', value: startVal('seconds', 'seconds') });
+  const err = h('p', { class: 'err', role: 'alert' });
+  err.hidden = true;
+  const fail = msg => { err.textContent = msg; err.hidden = false; };
+  const keep = () => { err.hidden = true; store(draftKey, JSON.stringify({ load: wIn.value, seconds: sIn.value })); };
+  wIn.addEventListener('input', keep); sIn.addEventListener('input', keep);
+  const read = () => ({
+    load: wIn.value.trim() === '' ? null : Number(wIn.value),
+    seconds: sIn.value.trim() === '' ? null : Number(sIn.value),
+  });
+  const secondsOk = v => Number.isFinite(v) && v >= 1 && v <= 3600;
+
+  const start = h('button', { type: 'button', class: 'btn', onclick: () => {
+    const { seconds } = read();
+    if (!secondsOk(seconds)) { fail('Enter a time in seconds first, from 1 to 3600.'); sIn.focus(); return; }
+    err.hidden = true;
+    startTimer(e.name, Math.round(seconds));
+  } }, 'Start timer');
+  const save = h('button', { type: 'button', class: 'btn primary', onclick: () => {
+    const { load, seconds } = read();
+    if (load == null && seconds == null) { fail('Enter a weight or a time first.'); return; }
+    if (load != null && !(Number.isFinite(load) && load >= 0 && load <= 200)) { fail('The weight must be from 0 to 200 kg.'); wIn.focus(); return; }
+    if (seconds != null && !secondsOk(seconds)) { fail('The time must be from 1 to 3600 seconds.'); sIn.focus(); return; }
+    store(draftKey, '');
+    if (e.sets) { const k = `done:${today}:${e.id}`; store(k, String(Math.min((Number(store(k)) || 0) + 1, e.sets))); }
+    Log.submit([{ id: opId(), op: 'addSetLog', at: localISO(),
+      entry: { date: today, session: key, exercise: e.id, name: e.name, load, seconds: seconds == null ? null : Math.round(seconds) } }]);
+  } }, 'Save this set');
+
+  const item = x => h('li', {},
+    h('span', { class: 'rt' }, [x.load != null ? kgText(x.load) : null, x.seconds != null ? `${x.seconds} s` : null].filter(Boolean).join(', ')),
+    h('span', { class: 'rm' }, fmt(x.date)),
+    Log.confirmButton('Remove', 'Tap again to remove', () => Log.submit([{ id: opId(), op: 'deleteSetLog', at: localISO(), target: x.id }])));
+  const hist = h('div', { class: 'tlog' });
+  if (!rows.length) hist.append(h('p', { class: 'hint' }, 'No sets saved yet. Each one you save shows up here with its date.'));
+  else {
+    hist.append(h('h4', {}, 'Previous sets'), h('ul', { class: 'recent' }, rows.slice(0, 5).map(item)));
+    if (rows.length > 5) hist.append(h('details', { class: 'fold' }, h('summary', {}, `Earlier sets (${rows.length - 5})`), h('ul', { class: 'recent' }, rows.slice(5).map(item))));
+  }
+  return h('div', { class: 'track' },
+    h('div', { class: 'pair' },
+      h('label', { class: 'f' }, h('span', { class: 'f-l' }, 'Weight (kg)'), wIn),
+      h('label', { class: 'f' }, h('span', { class: 'f-l' }, 'Time (seconds)'), sIn)),
+    h('div', { class: 'track-actions' }, start, save), err, hist);
+}
+
 function exerciseBody(key, e, parent, part) {
   const { today } = state;
   const doneKey = `done:${today}:${e.id}`;
@@ -800,6 +858,7 @@ function exerciseBody(key, e, parent, part) {
     draw();
     out.push(dots, count);
   }
+  if (e.track && !parent) out.push(trackPanel(key, e));
   if (e.timers && e.timers.length) {
     const row = h('div', { class: 'timers' });
     for (const t of e.timers) {

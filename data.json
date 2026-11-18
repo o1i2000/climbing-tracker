@@ -600,7 +600,7 @@
       "text": "Open Pull or Weakness and tick off the easy exercises one by one. They count for the week (last 7 days). Tick off every exercise and the whole session counts as done."
     }
   ],
-  "rev": 10,
+  "rev": 11,
   "workouts": {
     "Weakness": {
       "title": "Weakness session",
@@ -690,7 +690,8 @@
           "load": null,
           "how": "Weighted roller on a rope. Spin it both ways so you train open grip and closed grip.",
           "timers": [],
-          "needsLoad": true
+          "needsLoad": false,
+          "track": true
         }
       ]
     },
@@ -779,5 +780,6 @@
     ]
   ],
   "planNote": "Finger and Pull share one day, so training takes three days a week and the rest are free for climbing.",
-  "parts": []
+  "parts": [],
+  "setLog": []
 }
