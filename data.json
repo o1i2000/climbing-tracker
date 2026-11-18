@@ -99,6 +99,14 @@
       "readiness": 3,
       "details": "",
       "id": "omwkupmr6ecsz6"
+    },
+    {
+      "date": "2026-11-18",
+      "type": "Climb",
+      "title": "1 v8",
+      "readiness": 2,
+      "details": "",
+      "id": "omwmm1s1f8h81t"
     }
   ],
   "lists": [
@@ -600,7 +608,7 @@
       "text": "Open Pull or Weakness and tick off the easy exercises one by one. They count for the week (last 7 days). Tick off every exercise and the whole session counts as done."
     }
   ],
-  "rev": 14,
+  "rev": 15,
   "workouts": {
     "Weakness": {
       "title": "Weakness session",
