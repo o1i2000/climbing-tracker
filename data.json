@@ -600,7 +600,7 @@
       "text": "Open Pull or Weakness and tick off the easy exercises one by one. They count for the week (last 7 days). Tick off every exercise and the whole session counts as done."
     }
   ],
-  "rev": 9,
+  "rev": 10,
   "workouts": {
     "Weakness": {
       "title": "Weakness session",
@@ -758,7 +758,7 @@
           "sets": 5,
           "reps": "15",
           "unit": "set",
-          "load": "5kg",
+          "load": "6",
           "needsLoad": true,
           "how": "",
           "timers": []
