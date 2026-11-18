@@ -600,7 +600,7 @@
       "text": "Open Pull or Weakness and tick off the easy exercises one by one. They count for the week (last 7 days). Tick off every exercise and the whole session counts as done."
     }
   ],
-  "rev": 13,
+  "rev": 14,
   "workouts": {
     "Weakness": {
       "title": "Weakness session",
@@ -789,5 +789,15 @@
       "id": "omwmh2sh2zb4ll"
     }
   ],
-  "setLog": []
+  "setLog": [
+    {
+      "date": "2026-11-18",
+      "session": "Weakness",
+      "exercise": "w-sloper",
+      "name": "Sloper rollers",
+      "load": 25,
+      "seconds": 10,
+      "id": "omwmh5kmq9289m"
+    }
+  ]
 }
