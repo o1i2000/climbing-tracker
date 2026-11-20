@@ -487,14 +487,26 @@ function exerciseSheet({ workout, exercise, variant }) {
     const sets = h('input', { type: 'number', min: '1', max: '30', step: '1', inputmode: 'numeric', placeholder: 'e.g. 4', value: target.sets == null ? '' : String(target.sets) });
     const reps = h('input', { type: 'text', maxlength: '40', autocomplete: 'off', placeholder: 'e.g. 8 each side', value: target.reps || '' });
     const load = h('input', { type: 'text', maxlength: '40', autocomplete: 'off', placeholder: 'e.g. 12 kg', value: target.load || '' });
+    const hasHold = 'hold' in target;
+    const hold = h('input', { type: 'number', min: '1', max: '600', step: '1', inputmode: 'numeric', placeholder: 'e.g. 30', value: target.hold == null ? '' : String(target.hold) });
+    const err = h('p', { class: 'err', role: 'alert' });
+    err.hidden = true;
     return h('div', {},
       h('div', { class: 'pair' }, field('Sets', sets), field('Reps or time', reps)),
       field('Weight', load, 'Leave empty if it is bodyweight or not set yet.'),
+      hasHold ? field('Hold time (seconds)', hold, 'Adds a timer button to the exercise. Leave empty for no timer.') : null,
+      err,
       saveNote(),
       h('div', { class: 'sheet-actions' }, h('button', { type: 'button', class: 'btn primary block', onclick: () => {
         const n = sets.value === '' ? null : Math.max(1, Math.round(Number(sets.value)));
+        const fields = { sets: n, reps: reps.value.trim() || null, load: load.value.trim() || null };
+        if (hasHold) {
+          const hv = hold.value.trim() === '' ? null : Number(hold.value);
+          if (hv != null && !(Number.isFinite(hv) && hv >= 1 && hv <= 600)) { err.textContent = 'The hold time must be from 1 to 600 seconds.'; err.hidden = false; hold.focus(); return; }
+          fields.hold = hv == null ? null : Math.round(hv);
+        }
         close();
-        submit([{ id: uid(), op: 'setExercise', at: isoToday(), workout, exercise: exercise.id, variant: variant ? variant.id : undefined, fields: { sets: n, reps: reps.value.trim() || null, load: load.value.trim() || null } }]);
+        submit([{ id: uid(), op: 'setExercise', at: isoToday(), workout, exercise: exercise.id, variant: variant ? variant.id : undefined, fields }]);
       } }, 'Save')));
   });
 }

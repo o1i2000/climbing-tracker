@@ -559,7 +559,7 @@
     },
     {
       "session": "Stretching",
-      "what": "Three 10–15 minute slots a week, on rest days or after sessions.",
+      "what": "Three 10–15 minute slots a week, on rest days or after sessions. Seven stretches: leg raises, kettlebell raises, weighted pancake, hip flexor, half pigeon and wall shoulder raises.",
       "load": "Low",
       "spacing": "Any day; not counted as a session"
     }
@@ -626,7 +626,7 @@
       "text": "Open Pull or Weakness and tick off the easy exercises one by one. They count for the week (last 7 days). Tick off every exercise and the whole session counts as done."
     }
   ],
-  "rev": 19,
+  "rev": 20,
   "workouts": {
     "Weakness": {
       "title": "Weakness session",
@@ -789,6 +789,90 @@
           "needsLoad": true,
           "how": "",
           "timers": []
+        }
+      ]
+    },
+    "Stretching": {
+      "title": "Stretching routine",
+      "intro": "The routine from your Limber app, in order. Use Edit to set reps and hold times.",
+      "exercises": [
+        {
+          "id": "s-wide",
+          "name": "Wide leg hip raises",
+          "sets": null,
+          "reps": null,
+          "unit": "set",
+          "load": null,
+          "how": "Sit tall with your legs wide apart and your back straight. Lift one leg off the floor from the hip, hold it, then lower it. Do both sides.",
+          "timers": [],
+          "hold": null
+        },
+        {
+          "id": "s-prop",
+          "name": "Propped leg raises",
+          "sets": null,
+          "reps": null,
+          "unit": "set",
+          "load": null,
+          "how": "Sit leaning back on your hands. Lift one straight leg off the floor, hold it, then lower it. Do both sides.",
+          "timers": [],
+          "hold": null
+        },
+        {
+          "id": "s-kb",
+          "name": "Kettlebell leg raises",
+          "sets": null,
+          "reps": null,
+          "unit": "set",
+          "load": null,
+          "how": "The same seated leg raise with a kettlebell added for extra load. Keep your back straight.",
+          "timers": [],
+          "needsLoad": true,
+          "hold": null
+        },
+        {
+          "id": "s-pancake",
+          "name": "Standing weighted pancake",
+          "sets": null,
+          "reps": null,
+          "unit": "set",
+          "load": null,
+          "how": "Stand with your feet wide and hold a weight. Hinge forward from the hips with a flat back and let the weight pull you deeper. Hold, then stand back up.",
+          "timers": [],
+          "track": true
+        },
+        {
+          "id": "s-hipflex",
+          "name": "Hip flexor stretch",
+          "sets": null,
+          "reps": null,
+          "unit": "set",
+          "load": null,
+          "how": "Kneel in a lunge with the back knee on the floor. Tuck your pelvis and push your hips forward until you feel the front of the back hip stretch. Do both sides.",
+          "timers": [],
+          "hold": null
+        },
+        {
+          "id": "s-pigeon",
+          "name": "Half pigeon",
+          "sets": null,
+          "reps": null,
+          "unit": "set",
+          "load": null,
+          "how": "From all fours, bring one shin forward across the floor with the back leg straight behind you. Lower your hips and fold forward over the front leg. Do both sides.",
+          "timers": [],
+          "hold": null
+        },
+        {
+          "id": "s-wall",
+          "name": "Standing wall shoulder raises",
+          "sets": null,
+          "reps": null,
+          "unit": "set",
+          "load": null,
+          "how": "Stand facing a wall with your arms on it. Slide your arms up the wall as high as you can without arching your back, then lower them.",
+          "timers": [],
+          "hold": null
         }
       ]
     }

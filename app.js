@@ -245,7 +245,7 @@ function renderToday() {
       h('span', { class: 'dots', 'aria-label': `${filled} of ${r.st.target} this week` }, '●'.repeat(filled) + '○'.repeat(r.st.target - filled))));
   }
   const shared = groupsOf(data).filter(g => g.length > 1).map(g => `${g.join(' and ')} share a day.`).join(' ');
-  root.append(section('This week', `Finger and Board need two days between them. ${shared} A week is the last 7 days. Tap Pull or Weakness to open the workout and tick off single exercises.`.replace('  ', ' '), queue));
+  root.append(section('This week', `Finger and Board need two days between them. ${shared} A week is the last 7 days. Tap a session to open its workout. In Pull and Weakness you can tick off single exercises.`.replace('  ', ' '), queue));
 
   // recent activity (sessions and single exercises), newest first
   const items = [
@@ -859,9 +859,11 @@ function exerciseBody(key, e, parent, part) {
     out.push(dots, count);
   }
   if (e.track && !parent) out.push(trackPanel(key, e));
-  if (e.timers && e.timers.length) {
+  const timers = e.timers && e.timers.length ? e.timers : (e.hold ? [{ label: 'Hold', s: e.hold, work: true }] : []);
+  if (e.hold == null && 'hold' in e) out.push(h('p', { class: 'load' }, 'Hold time: not set yet'));
+  if (timers.length) {
     const row = h('div', { class: 'timers' });
-    for (const t of e.timers) {
+    for (const t of timers) {
       row.append(h('button', { type: 'button', class: t.work ? 'work' : '', onclick: () => startTimer(`${e.name}: ${t.label.toLowerCase()}`, t.s) },
         h('span', { class: 'tl' }, t.label), h('span', { class: 'tt' }, fmtClock(t.s))));
     }
@@ -893,14 +895,15 @@ function chosenVariant(key, e) {
 function exerciseCard(key, e, n) {
   const li = h('li', { class: 'ex' });
   li.append(h('div', { class: 'ex-head' }, h('span', { class: 'ex-n', 'aria-hidden': 'true' }, String(n)), h('h3', {}, e.name)));
-  if (!e.variants) { li.append(...exerciseBody(key, e, null, partControl(key, e, () => null))); return li; }
+  const ticks = TRAIN.includes(key);
+  if (!e.variants) { li.append(...exerciseBody(key, e, null, ticks ? partControl(key, e, () => null) : null)); return li; }
   const last = lastVariant(key, e);
   const body = h('div', { class: 'variant-body' });
   const row = h('div', { class: 'chips', role: 'radiogroup', 'aria-label': 'Choose one for today' });
   let cur = chosenVariant(key, e);
   const draw = () => {
     row.querySelectorAll('button').forEach(b => b.setAttribute('aria-checked', String(b.dataset.v === cur.id)));
-    body.replaceChildren(...exerciseBody(key, cur, e, partControl(key, e, () => cur.name)));
+    body.replaceChildren(...exerciseBody(key, cur, e, ticks ? partControl(key, e, () => cur.name) : null));
   };
   for (const v of e.variants) row.append(h('button', { type: 'button', role: 'radio', 'data-v': v.id, onclick: () => { cur = v; store(variantKey(e), v.id); draw(); } }, v.name));
   if (last) li.append(h('p', { class: 'how', style: 'margin-top:8px' }, `Last time: ${last.v.name}, ${fmt(last.date)}.`));

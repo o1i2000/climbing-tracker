@@ -53,3 +53,9 @@ Start timer button that counts down the entered time, and Save this set. Saved s
 (`{id, date, session, exercise, name, load, seconds}`, ops `addSetLog` / `deleteSetLog`) and appear newest first under
 Previous sets. The fields start from the last saved set, and unsaved typing is kept in `track:<exercise id>` in the
 browser so a re-render does not wipe it. Set `track: true` on any other exercise in `data.json` to switch it on there.
+
+## Stretching routine
+`workouts.Stretching` holds the seven stretches from Limber. Stretching has no weekly tick buttons (its target is
+sessions per week, not parts). An exercise with a `hold` key (seconds or null) gets a Hold field in the Edit sheet and
+a timer button once it is set. The standing weighted pancake uses `track: true`, so it has editable weight and time
+with a history of previous sets.
