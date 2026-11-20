@@ -762,6 +762,27 @@ function startTimer(label, seconds) {
   tick();
 }
 
+/* Ticks for today only: they key on the date, so they start fresh each day. Stretching uses these. */
+const setsKey = (day, id) => `done:${day}:${id}`;
+const finKey = (day, id) => `fin:${day}:${id}`;
+const setsDone = (day, e) => Math.min(Number(store(setsKey(day, e.id))) || 0, e.sets || 0);
+const isFinished = (day, e) => (e.sets ? setsDone(day, e) >= e.sets : store(finKey(day, e.id)) === '1');
+
+function finishControl(e) {
+  const { today } = state;
+  const set = on => {
+    if (e.sets) store(setsKey(today, e.id), String(on ? e.sets : 0));
+    else store(finKey(today, e.id), on ? '1' : '');
+    mount();
+  };
+  if (isFinished(today, e)) {
+    return h('div', { class: 'part done' },
+      h('span', { class: 'part-label' }, ringIcon('done', 22), 'Done today'),
+      h('button', { type: 'button', class: 'btn quiet', onclick: () => set(false) }, 'Undo'));
+  }
+  return h('div', { class: 'part' }, h('button', { type: 'button', class: 'btn', onclick: () => set(true) }, e.sets ? 'Mark all sets done' : 'Mark done'));
+}
+
 function partControl(key, e, detail) {
   const { data, today } = state;
   const hits = (data.parts || []).filter(p => p.session === key && p.exercise === e.id && p.date <= today && diffDays(today, p.date) < 7).sort((a, b) => b.date.localeCompare(a.date));
@@ -810,7 +831,7 @@ function trackPanel(key, e) {
     if (load != null && !(Number.isFinite(load) && load >= 0 && load <= 200)) { fail('The weight must be from 0 to 200 kg.'); wIn.focus(); return; }
     if (seconds != null && !secondsOk(seconds)) { fail('The time must be from 1 to 3600 seconds.'); sIn.focus(); return; }
     store(draftKey, '');
-    if (e.sets) { const k = `done:${today}:${e.id}`; store(k, String(Math.min((Number(store(k)) || 0) + 1, e.sets))); }
+    if (e.sets) store(setsKey(today, e.id), String(Math.min(setsDone(today, e) + 1, e.sets)));
     Log.submit([{ id: opId(), op: 'addSetLog', at: localISO(),
       entry: { date: today, session: key, exercise: e.id, name: e.name, load, seconds: seconds == null ? null : Math.round(seconds) } }]);
   } }, 'Save this set');
@@ -834,8 +855,8 @@ function trackPanel(key, e) {
 
 function exerciseBody(key, e, parent, part) {
   const { today } = state;
-  const doneKey = `done:${today}:${e.id}`;
-  let done = Math.min(Number(store(doneKey)) || 0, e.sets || 0);
+  const doneKey = setsKey(today, e.id);
+  let done = setsDone(today, e);
   const unit = e.unit || 'set';
   const out = [];
   const dose = e.sets && e.reps ? `${e.sets} × ${e.reps}` + (e.hold ? `, ${e.hold} s hold` : '') : (e.sets && e.hold ? `${e.sets} × ${e.hold} s hold` : null);
@@ -854,6 +875,7 @@ function exerciseBody(key, e, parent, part) {
     for (let i = 0; i < e.sets; i++) {
       dots.append(h('button', { type: 'button', role: 'checkbox', 'aria-label': `${unit} ${i + 1} of ${e.sets}`, onclick: () => {
         done = done === i + 1 ? i : i + 1; store(doneKey, String(done)); draw();
+        if (!TRAIN.includes(key) && !parent) mount();
       } }, String(i + 1)));
     }
     draw();
@@ -894,10 +916,11 @@ function chosenVariant(key, e) {
 }
 
 function exerciseCard(key, e, n) {
-  const li = h('li', { class: 'ex' });
-  li.append(h('div', { class: 'ex-head' }, h('span', { class: 'ex-n', 'aria-hidden': 'true' }, String(n)), h('h3', {}, e.name)));
   const ticks = TRAIN.includes(key);
-  if (!e.variants) { li.append(...exerciseBody(key, e, null, ticks ? partControl(key, e, () => null) : null)); return li; }
+  const fin = !ticks && isFinished(state.today, e);
+  const li = h('li', { class: fin ? 'ex finished' : 'ex' });
+  li.append(h('div', { class: 'ex-head' }, h('span', { class: 'ex-n', 'aria-hidden': 'true' }, fin ? '✓' : String(n)), h('h3', {}, e.name, fin ? h('span', { class: 'sr' }, ' (done today)') : null)));
+  if (!e.variants) { li.append(...exerciseBody(key, e, null, ticks ? partControl(key, e, () => null) : finishControl(e))); return li; }
   const last = lastVariant(key, e);
   const body = h('div', { class: 'variant-body' });
   const row = h('div', { class: 'chips', role: 'radiogroup', 'aria-label': 'Choose one for today' });
@@ -921,7 +944,17 @@ function renderWorkout(key) {
   root.append(h('button', { type: 'button', class: 'back', onclick: () => go(backTo, true) },
     s('svg', { viewBox: '0 0 24 24', width: 20, height: 20, 'aria-hidden': 'true' }, s('path', { d: 'M15 5l-7 7 7 7', fill: 'none', stroke: 'currentColor', 'stroke-width': 2.4, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' })), backTo === 'today' ? 'Today' : 'Plan'));
   const pr = partsFor(data, key, today);
-  root.append(h('section', { class: 'section tight' }, h('h2', {}, w.title), w.intro ? h('p', { class: 'sub' }, w.intro) : null,
+  let todayLine = null;
+  if (!TRAIN.includes(key)) {
+    const n = w.exercises.filter(x => isFinished(today, x)).length, total = w.exercises.length;
+    const wk = stateAt(data, today)[key];
+    const noun = key === 'Stretching' ? 'stretches' : 'exercises';
+    const logged = data.sessions.some(x => x.type === key && x.date === today);
+    todayLine = h('div', {},
+      h('p', { class: 'progress' }, `Today: ${n} of ${total} ${noun} done.` + (n === total && !logged ? ' Log the session below so it counts for the week.' : '') + (logged ? ' Session logged.' : '')),
+      wk ? h('p', { class: 'sub', style: 'margin-top:4px' }, `This week: ${wk.count7} of ${wk.target} ${key.toLowerCase()} sessions logged.`) : null);
+  }
+  root.append(h('section', { class: 'section tight' }, h('h2', {}, w.title), w.intro ? h('p', { class: 'sub' }, w.intro) : null, todayLine,
     pr && pr.done ? h('p', { class: 'progress' }, `This week: ${pr.done} of ${pr.total} exercises ticked off.` + (pr.done === pr.total ? ` That counts as a full ${key} session for the week.` : '')) : null));
   const list = h('ol', { class: 'workout' });
   w.exercises.forEach((e, i) => list.append(exerciseCard(key, e, i + 1)));
@@ -963,6 +996,15 @@ document.addEventListener('pointerdown', e => {
   // tapping outside a chart hides its tooltip (touch has no hover-out)
   document.querySelectorAll('.chart .tip').forEach(t => { if (!t.parentElement.contains(e.target)) t.hidden = true; });
 });
+
+const pinnedDay = params.has('today');
+function refreshDay() {
+  if (pinnedDay || !state.data) return;
+  const now = localISO();
+  if (now !== state.today) { state.today = now; renderHeader(); mount(); }
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') refreshDay(); });
+window.addEventListener('pageshow', refreshDay);
 
 function start(data) {
   state.data = data;

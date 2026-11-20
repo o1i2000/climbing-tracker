@@ -60,3 +60,9 @@ leg, low lunge, wide leg side squats). Stretching has no weekly tick buttons (it
 parts). The Edit sheet changes sets, reps, weight and the description of any exercise. An exercise with a `hold` key
 (seconds or null) also gets a Hold field and a timer button once it is set. The weighted pancake uses `track: true`,
 so it has editable weight and time with a history of previous sets.
+
+## Ticking a stretch today
+On a Stretching exercise, `Mark done` (or the set dots when `sets` is set) ticks it for today. These ticks live in the
+browser under `done:<date>:<id>` and `fin:<date>:<id>`, so they reset on their own each day. The header shows
+`Today: n of 7 done` and `This week: n of 3 sessions logged`. When every stretch is ticked it prompts you to log the
+session; nothing is logged automatically. The app also refreshes its idea of today when it is reopened after midnight.

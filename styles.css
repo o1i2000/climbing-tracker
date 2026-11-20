@@ -340,3 +340,7 @@ details.fold.how > summary { font-size: 16px; min-height: 40px; }
 .track-actions .btn { min-height: 48px; }
 .tlog h4 { margin-top: 18px; font-size: 15px; font-weight: 700; }
 .tlog .fold { margin-top: 6px; }
+
+/* ---------- done today (stretching) ---------- */
+.ex.finished .ex-n { background: var(--ink); color: var(--surface); font-size: 18px; }
+.ex.finished h3 { color: var(--ink-2); }
