@@ -514,6 +514,16 @@
       "body": null,
       "note": "One-hand pinch block max",
       "id": "t11"
+    },
+    {
+      "date": "2026-11-20",
+      "time": "11:44",
+      "type": "20mm half crimp",
+      "right": 66.5,
+      "left": 60.08,
+      "body": null,
+      "note": "",
+      "id": "t-20mm-2026-11-20T11:44"
     }
   ],
   "plan": [
@@ -616,7 +626,7 @@
       "text": "Open Pull or Weakness and tick off the easy exercises one by one. They count for the week (last 7 days). Tick off every exercise and the whole session counts as done."
     }
   ],
-  "rev": 16,
+  "rev": 17,
   "workouts": {
     "Weakness": {
       "title": "Weakness session",
