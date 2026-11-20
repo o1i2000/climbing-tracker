@@ -626,7 +626,7 @@
       "text": "Open Pull or Weakness and tick off the easy exercises one by one. They count for the week (last 7 days). Tick off every exercise and the whole session counts as done."
     }
   ],
-  "rev": 17,
+  "rev": 18,
   "workouts": {
     "Weakness": {
       "title": "Weakness session",
@@ -813,6 +813,13 @@
       "exercise": "p-iyt",
       "name": "I Y T shoulder raises",
       "id": "omwmh2sh2zb4ll"
+    },
+    {
+      "date": "2026-11-20",
+      "session": "Weakness",
+      "exercise": "w-heel",
+      "name": "Heel hook floor raises",
+      "id": "omwp0eun1hrjdj"
     }
   ],
   "setLog": [
