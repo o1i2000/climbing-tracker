@@ -638,7 +638,7 @@
       "text": "Rotator cuff rows and I Y T (Pull day) plus face pulls and Y's to I's (Weakness day) add up to about 18 sets of cuff and rear-delt work. Keep them on different days. The app warns you if you tick or log both on the same day."
     }
   ],
-  "rev": 33,
+  "rev": 34,
   "workouts": {
     "Weakness": {
       "title": "Weakness session",
@@ -744,10 +744,10 @@
             {
               "id": "p-pullups",
               "name": "Weighted pullups",
-              "sets": 5,
+              "sets": 4,
               "reps": "5",
               "unit": "set",
-              "load": "40 kg",
+              "load": "20kg",
               "needsLoad": true,
               "how": "",
               "timers": []
