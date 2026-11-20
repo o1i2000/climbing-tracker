@@ -626,7 +626,7 @@
       "text": "Open Pull or Weakness and tick off the easy exercises one by one. They count for the week (last 7 days). Tick off every exercise and the whole session counts as done."
     }
   ],
-  "rev": 22,
+  "rev": 23,
   "workouts": {
     "Weakness": {
       "title": "Weakness session",
@@ -821,10 +821,10 @@
         {
           "id": "s-pancake",
           "name": "Standing weighted pancake",
-          "sets": null,
-          "reps": null,
+          "sets": 4,
+          "reps": "10",
           "unit": "set",
-          "load": null,
+          "load": "10",
           "how": "Stand with your feet at least double hip width apart, toes forward and knees straight. Hold a weight and hinge forward at the hips with a flat back, letting the weight pull you deeper. Hold, then stand back up.",
           "timers": [],
           "track": true
