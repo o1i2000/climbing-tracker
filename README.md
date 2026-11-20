@@ -61,6 +61,11 @@ It is on for Weighted pullups, which is a variant of Main pull, and works on any
 that they start from your last set, so a pyramid such as 30, 35, 40 kg is one edit per set. Reps must be a whole number
 from 1 to 100 and weight 0 to 200 kg (0 is bodyweight).
 
+A `track: "reps"` exercise also gets a Show chart button under its history. The chart plots one point per day: the mean
+weight of that day's sets (sets with no weight are skipped), on a date axis. Tap a point, or use the left and right
+arrow keys, to see that day's sets in a tooltip, and Show table gives the same numbers as text. It stays closed
+until opened and remembers being open in `chart:<exercise id>` in the browser. Time-based trackers do not have it.
+
 ## Stretching routine
 `workouts.Stretching` holds seven stretches (hip raises over a bottle, pigeon, weighted pancake, wrists, standing straight
 leg, low lunge, wide leg side squats). Stretching has no weekly tick buttons (its target is sessions per week, not

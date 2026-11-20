@@ -802,6 +802,137 @@ function partControl(key, e, detail) {
 
 const kgText = v => `${Number.isInteger(v) ? v : Number(v.toFixed(2))} kg`;
 
+/* ---------- Set chart: average weight of each day's sets ---------- */
+function setDays(entries) {
+  const by = new Map();
+  for (const x of entries) if (x.load != null) { if (!by.has(x.date)) by.set(x.date, []); by.get(x.date).push(x); }
+  return [...by].sort((a, b) => a[0].localeCompare(b[0])).map(([date, sets]) => ({ date, t: toUTC(date), sets, avg: sets.reduce((n, x) => n + x.load, 0) / sets.length }));
+}
+const numText = v => String(Number.isInteger(v) ? v : Number(v.toFixed(2)));
+const setsText = sets => sets.map(x => (x.reps != null ? `${numText(x.load)} × ${x.reps}` : numText(x.load))).join(', ');
+const shortDate = (t, withYear) => { const d = new Date(t); return `${d.getUTCDate()} ${MO[d.getUTCMonth()]}${withYear ? ` ’${String(d.getUTCFullYear()).slice(2)}` : ''}`; };
+
+function mountSetChart(box, days) {
+  const H = 210, M = { t: 14, r: 66, b: 28, l: 34 };
+  const vals = days.map(d => d.avg);
+  const lo = Math.min(...vals), hi = Math.max(...vals);
+  const pad = Math.max(2, (8 - (hi - lo)) / 2), a = lo - pad, b = hi + pad;
+  const step = b - a <= 10 ? 2 : b - a <= 25 ? 5 : b - a <= 60 ? 10 : 20;
+  const y0 = Math.max(0, Math.floor(a / step) * step), y1 = Math.ceil(b / step) * step;
+  const tMin = days[0].t, tMax = days[days.length - 1].t;
+  let idx = null, svgEl = null;
+  const tip = makeTip(box);
+
+  function draw() {
+    const w = Math.max(260, Math.round(box.clientWidth));
+    const pw = w - M.l - M.r, ph = H - M.t - M.b;
+    const X = t => (tMax === tMin ? M.l + pw / 2 : M.l + (t - tMin) / (tMax - tMin) * pw);
+    const Y = v => M.t + (1 - (v - y0) / (y1 - y0)) * ph;
+    const xs = days.map(d => X(d.t));
+    const svg = s('svg', { viewBox: `0 0 ${w} ${H}`, width: w, height: H, 'aria-hidden': 'true' });
+
+    for (let v = y0 + step; v < y1; v += step) {
+      svg.append(s('line', { class: 'grid', x1: M.l, x2: w - M.r, y1: Y(v), y2: Y(v) }));
+      svg.append(s('text', { class: 'ax', x: M.l - 8, y: Y(v) + 4, 'text-anchor': 'end' }, v));
+    }
+    svg.append(s('line', { class: 'base', x1: M.l, x2: w - M.r, y1: Y(y0), y2: Y(y0) }));
+    svg.append(s('text', { class: 'ax', x: M.l - 8, y: Y(y0) + 4, 'text-anchor': 'end' }, y0));
+    svg.append(s('text', { class: 'ax', x: 0, y: 10 }, 'kg'));
+
+    // date ticks on whole days, spaced so the labels never touch
+    const n = tMax === tMin ? 0 : Math.max(1, Math.min(4, Math.floor(pw / 64)));
+    const span = tMax - tMin, yr = span > 300 * DAY;
+    const ticks = [...new Set(n === 0 ? [tMin] : Array.from({ length: n + 1 }, (_, k) => tMin + Math.round(span / n * k / DAY) * DAY))];
+    for (const t of ticks) {
+      svg.append(s('line', { class: 'base', x1: X(t), x2: X(t), y1: Y(y0), y2: Y(y0) + 4 }));
+      svg.append(s('text', { class: 'ax', x: X(t), y: H - 8, 'text-anchor': 'middle' }, shortDate(t, yr)));
+    }
+
+    const cross = s('line', { class: 'cross', y1: M.t, y2: Y(y0), x1: 0, x2: 0, style: 'display:none' });
+    svg.append(cross);
+    svg.append(s('path', { class: 'line s1', d: days.map((d, i) => `${i ? 'L' : 'M'}${xs[i].toFixed(1)} ${Y(d.avg).toFixed(1)}`).join('') }));
+    const dots = days.map((d, i) => { const c = s('circle', { class: 'dot s1', cx: xs[i], cy: Y(d.avg), r: 5 }); svg.append(c); return c; });
+    const lastD = days[days.length - 1];
+    svg.append(s('text', { class: 'lbl', x: w - M.r + 10, y: Y(lastD.avg) + 4 }, `${kg(lastD.avg)} kg`));
+
+    const hit = s('rect', { x: M.l - 12, y: 0, width: pw + 24, height: H - M.b + 4, fill: 'transparent' });
+    svg.append(hit);
+
+    function setIdx(i) {
+      idx = i;
+      cross.setAttribute('x1', xs[i]); cross.setAttribute('x2', xs[i]); cross.style.display = '';
+      dots.forEach((c, j) => c.setAttribute('r', j === i ? 6.5 : 5));
+      const d = days[i];
+      tip.show(xs[i], w, [
+        h('div', { class: 'd' }, fmtLong(d.date)),
+        h('div', { class: 'r' }, h('i', { class: 'key s1' }), h('b', {}, `${kg(d.avg)} kg`), h('span', {}, `average of ${plural(d.sets.length, 'set', 'sets')}`)),
+        h('div', { class: 'n' }, `${d.sets.some(x => x.reps != null) ? 'kg × reps' : 'kg'}: ${setsText(d.sets)}`)]);
+    }
+    function clear() { idx = null; cross.style.display = 'none'; tip.hide(); dots.forEach(c => c.setAttribute('r', 5)); }
+    const nearest = e => {
+      const px = e.clientX - svg.getBoundingClientRect().left;
+      let best = 0;
+      xs.forEach((x, i) => { if (Math.abs(x - px) < Math.abs(xs[best] - px)) best = i; });
+      return best;
+    };
+    hit.addEventListener('pointermove', e => setIdx(nearest(e)));
+    hit.addEventListener('pointerdown', e => setIdx(nearest(e)));
+    hit.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') clear(); });
+    box.onkeydown = e => {
+      if (e.key === 'ArrowLeft') { setIdx(Math.max(0, (idx ?? days.length) - 1)); e.preventDefault(); }
+      else if (e.key === 'ArrowRight') { setIdx(Math.min(days.length - 1, (idx ?? -1) + 1)); e.preventDefault(); }
+      else if (e.key === 'Escape') clear();
+    };
+    box.onblur = clear;
+    if (svgEl) svgEl.remove();
+    svgEl = svg;
+    box.prepend(svg);
+    if (idx != null) setIdx(Math.min(idx, days.length - 1));
+  }
+  draw();
+  new ResizeObserver(() => { if (box.clientWidth) draw(); }).observe(box);
+}
+
+function setTable(days, name) {
+  const t = h('table', { class: 'data' },
+    h('caption', { class: 'sub', style: 'text-align:left;caption-side:top' }, `${name}: average weight of each day's sets`),
+    h('thead', {}, h('tr', {}, h('th', {}, 'Date'), h('th', { class: 'n' }, 'Average kg'), h('th', {}, 'Sets, kg × reps'))));
+  const body = h('tbody');
+  for (const d of [...days].reverse()) body.append(h('tr', {}, h('td', {}, fmtLong(d.date)), h('td', { class: 'n' }, kg(d.avg)), h('td', {}, setsText(d.sets))));
+  t.append(body);
+  return t;
+}
+
+/* A Show chart button; the chart itself stays out of the way until it is opened. The open state is remembered. */
+function setChartBlock(e, entries) {
+  const days = setDays(entries);
+  if (!days.length) return null;
+  const openKey = `chart:${e.id}`;
+  const box = h('div', { class: 'chart', tabindex: '0', role: 'group', 'aria-label': `Line chart of the average weight of each day's sets of ${e.name}. A table version is available.` });
+  const tableWrap = h('div', { hidden: true }, setTable(days, e.name));
+  const swap = h('button', { type: 'button', class: 'toggle', 'aria-pressed': 'false', onclick: () => {
+    const on = tableWrap.hidden;
+    tableWrap.hidden = !on; box.hidden = on;
+    swap.setAttribute('aria-pressed', String(on));
+    swap.textContent = on ? 'Show chart' : 'Show table';
+  } }, 'Show table');
+  const foot = h('p', { class: 'foot' }, days.length > 1
+    ? 'Each point is the mean of that day’s set weights, so 30, 35 and 40 kg plots as 35 kg. Tap a point to see its sets.'
+    : 'Each point is the mean of that day’s set weights. Log another day to see a trend. Tap the point to see its sets.');
+  const body = h('div', { class: 'setchart-body' }, h('p', { class: 'sub' }, 'Average weight of each day’s sets'), box, tableWrap, swap, foot);
+  let open = store(openKey) === '1';
+  body.hidden = !open;
+  const toggle = h('button', { type: 'button', class: 'toggle', 'aria-expanded': String(open), onclick: () => {
+    open = !open;
+    store(openKey, open ? '1' : '');
+    body.hidden = !open;
+    toggle.setAttribute('aria-expanded', String(open));
+    toggle.textContent = open ? 'Hide chart' : 'Show chart';
+  } }, open ? 'Hide chart' : 'Show chart');
+  mountSetChart(box, days);
+  return h('div', { class: 'setchart' }, toggle, body);
+}
+
 /* Weight and time you can edit, a timer that uses that time, and the sets you logged before. `track: true` logs weight and
    time. `track: "reps"` logs weight and reps for each set (weighted pullups), with no timer, so every set can differ. */
 function trackPanel(key, e) {
@@ -873,7 +1004,8 @@ function trackPanel(key, e) {
       repsMode
         ? h('label', { class: 'f' }, h('span', { class: 'f-l' }, 'Reps'), rIn)
         : h('label', { class: 'f' }, h('span', { class: 'f-l' }, 'Time (seconds)'), sIn)),
-    h('div', { class: repsMode ? 'track-actions one' : 'track-actions' }, ...(repsMode ? [save] : [start, save])), err, hist);
+    h('div', { class: repsMode ? 'track-actions one' : 'track-actions' }, ...(repsMode ? [save] : [start, save])), err, hist,
+    repsMode ? setChartBlock(e, (data.setLog || []).filter(x => x.exercise === e.id && x.date <= today)) : null);
 }
 
 function exerciseBody(key, e, parent, part) {

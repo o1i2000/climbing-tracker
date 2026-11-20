@@ -358,3 +358,6 @@ details.fold.how > summary { font-size: 16px; min-height: 40px; }
 .f input[type="date"]::-webkit-date-and-time-value { text-align: left; min-width: 0; }
 .tabs button { min-width: 0; overflow: hidden; }
 .track-actions.one { grid-template-columns: minmax(0, 1fr); }
+.setchart { margin-top: 12px; }
+.setchart .sub { margin-top: 12px; font-size: 13px; color: var(--ink-2); }
+.setchart .chart { margin-top: 6px; }
