@@ -71,10 +71,14 @@ session; nothing is logged automatically. The app also refreshes its idea of tod
 `data.clashes` lists groups of exercises that should not share a day. The shoulder group is the Pull day cuff rows and
 I Y T plus the Weakness day face pulls and Y's to I's. Each group has a `title`, a short `what`, the `exercises` (ids) and
 the `advice` shown in the sheet. Only exercises from different sessions clash, so cuff rows and I Y T together on a Pull
-day never warn. The check (`Log.clashFor` in `log.js`) looks at parts ticked and sessions logged on the same date, and
-the warning shows the names and the total sets. It appears when you tick an exercise (`Tick it off anyway` or
-`Leave it for another day`) and when you save a session that would put both days together (`Log it anyway` or
-`Go back`). Nothing is blocked; the warning only asks first. Add another entry to `clashes` to guard other pairs.
+day never warn. The check (`Log.clashFor` in `log.js`) looks at everything done on the same date: parts ticked, sessions
+logged, and sets or Mark done ticked on this phone (`done:<date>:<id>`, `fin:<date>:<id>`).
+
+The warning appears on the first set you tick of an exercise (so it comes before you do the rest of its sets), when you
+use `Tick off for this week`, and when you save a session that would put both days together. It names the exercises and
+the total sets. `Leave it for another day` (or `Go back`) changes nothing; `Do it anyway` goes ahead and remembers the
+choice for that date (`clash-ok:<date>:<clash id>`), so you are not asked again for that clash on the same day.
+Nothing is blocked. Mark done is not checked (no stretching clash exists). Add another entry to `clashes` to guard other pairs.
 
 ## Narrow screens
 Layout grids use `minmax(0, 1fr)` so a column can shrink instead of widening the page. The Today title is sized from the

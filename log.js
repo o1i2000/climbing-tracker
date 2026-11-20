@@ -284,15 +284,29 @@ function findExercise(d, id) {
   }
   return null;
 }
+/* Set dots and Mark done are saved on this phone per day (done:<day>:<id>, fin:<day>:<id>). Anything ticked counts as done that day. */
+function tickedOn(day) {
+  const out = new Set(), dp = 'done:' + day + ':', fp = 'fin:' + day + ':';
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i) || '';
+      if (k.startsWith(dp) && Number(localStorage.getItem(k)) > 0) out.add(k.slice(dp.length));
+      else if (k.startsWith(fp) && localStorage.getItem(k) === '1') out.add(k.slice(fp.length));
+    }
+  } catch (e) { /* storage blocked: only logged work counts */ }
+  return out;
+}
+const ackKey = (day, id) => 'clash-ok:' + day + ':' + id;
 function clashFor(d, day, { session, exercise }) {
-  const out = [];
+  const out = [], ticked = tickedOn(day);
   for (const c of d.clashes || []) {
+    if (ls.get(ackKey(day, c.id))) continue;
     const members = c.exercises.map(id => findExercise(d, id)).filter(Boolean);
     const adding = exercise ? members.filter(m => m.id === exercise) : members.filter(m => m.session === session);
     if (!adding.length) continue;
     const mine = new Set(adding.map(m => m.session));
     const already = members.filter(m => !mine.has(m.session) && (
-      (d.parts || []).some(p => p.date === day && p.exercise === m.id) ||
+      ticked.has(m.id) || (d.parts || []).some(p => p.date === day && p.exercise === m.id) ||
       (d.sessions || []).some(s => s.date === day && s.type === m.session)));
     if (!already.length) continue;
     out.push({ id: c.id, title: c.title, what: c.what, advice: c.advice, ids: [...adding, ...already].map(m => m.id) });
@@ -313,14 +327,14 @@ function clashForSessions(d, day, types) {
   return [...byId.values()].map(x => withTotals(d, x));
 }
 const listNames = a => a.length < 2 ? a.join('') : `${a.slice(0, -1).join(', ')} and ${a[a.length - 1]}`;
-function warnSheet({ hits, confirmLabel, backLabel, onConfirm }) {
+function warnSheet({ hits, day, confirmLabel, backLabel, onConfirm }) {
   return sheet(hits[0].title, close => h('div', {},
     hits.map(x => h('div', { class: 'warn' },
       h('p', {}, `That puts ${listNames(x.names)} on the same day` + (x.sets ? `: about ${x.sets} sets of ${x.what}.` : '.')),
       h('p', { class: 'sub' }, x.advice))),
     h('div', { class: 'sheet-actions' },
       h('button', { type: 'button', class: 'btn primary block', onclick: close }, backLabel || 'Leave it for another day'),
-      h('button', { type: 'button', class: 'btn quiet', onclick: () => { close(); onConfirm(); } }, confirmLabel))));
+      h('button', { type: 'button', class: 'btn quiet', onclick: () => { for (const x of hits) if (day) ls.set(ackKey(day, x.id), '1'); close(); onConfirm(); } }, confirmLabel))));
 }
 
 function sessionSheet({ today, suggested, readiness, title: prefill }) {
@@ -345,7 +359,7 @@ function sessionSheet({ today, suggested, readiness, title: prefill }) {
         } })));
       };
       const hits = clashForSessions(current(), day, types);
-      if (hits.length) warnSheet({ hits, confirmLabel: 'Log it anyway', backLabel: 'Go back', onConfirm: doSave });
+      if (hits.length) warnSheet({ hits, day, confirmLabel: 'Log it anyway', backLabel: 'Go back', onConfirm: doSave });
       else doSave();
     } }, 'Save session');
     return h('div', {},

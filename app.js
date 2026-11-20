@@ -795,7 +795,7 @@ function partControl(key, e, detail) {
     part: { date: today, session: key, exercise: e.id, name: shortName(e.name), detail: detail() || undefined } }]);
   return h('div', { class: 'part' }, h('button', { type: 'button', class: 'btn', onclick: () => {
     const hits = Log.clashFor(data, today, { session: key, exercise: e.id });
-    if (hits.length) Log.warnSheet({ hits, confirmLabel: 'Tick it off anyway', onConfirm: tick });
+    if (hits.length) Log.warnSheet({ hits, day: today, confirmLabel: 'Tick it off anyway', onConfirm: tick });
     else tick();
   } }, 'Tick off for this week'));
 }
@@ -878,9 +878,15 @@ function exerciseBody(key, e, parent, part) {
       count.textContent = `${done} of ${unitText(e.sets, unit)} done`;
     };
     for (let i = 0; i < e.sets; i++) {
-      dots.append(h('button', { type: 'button', role: 'checkbox', 'aria-label': `${unit} ${i + 1} of ${e.sets}`, onclick: () => {
+      const apply = () => {
         done = done === i + 1 ? i : i + 1; store(doneKey, String(done)); draw();
         if (!TRAIN.includes(key) && !parent) mount();
+      };
+      dots.append(h('button', { type: 'button', role: 'checkbox', 'aria-label': `${unit} ${i + 1} of ${e.sets}`, onclick: () => {
+        /* the first set of an exercise is the moment to warn, before the rest of its sets are done */
+        const hits = done === 0 ? Log.clashFor(state.data, today, { session: key, exercise: (parent || e).id }) : [];
+        if (hits.length) Log.warnSheet({ hits, day: today, confirmLabel: 'Do it anyway', onConfirm: apply });
+        else apply();
       } }, String(i + 1)));
     }
     draw();
