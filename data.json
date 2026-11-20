@@ -626,7 +626,7 @@
       "text": "Open Pull or Weakness and tick off the easy exercises one by one. They count for the week (last 7 days). Tick off every exercise and the whole session counts as done."
     }
   ],
-  "rev": 18,
+  "rev": 19,
   "workouts": {
     "Weakness": {
       "title": "Weakness session",
@@ -700,10 +700,10 @@
         {
           "id": "w-yi",
           "name": "Shoulder Y's to I's",
-          "sets": null,
-          "reps": null,
+          "sets": 4,
+          "reps": "10",
           "unit": "set",
-          "load": null,
+          "load": "1kg",
           "how": "Lie face down with your arms lifted off the floor. Start with your arms straight, then bring them to your sides with the elbows bent at a right angle.",
           "timers": []
         },
