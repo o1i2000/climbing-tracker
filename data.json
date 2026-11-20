@@ -626,7 +626,7 @@
       "text": "Open Pull or Weakness and tick off the easy exercises one by one. They count for the week (last 7 days). Tick off every exercise and the whole session counts as done."
     }
   ],
-  "rev": 26,
+  "rev": 27,
   "workouts": {
     "Weakness": {
       "title": "Weakness session",
@@ -865,10 +865,10 @@
         {
           "id": "s-squat",
           "name": "Wide leg side squats",
-          "sets": null,
-          "reps": null,
+          "sets": 4,
+          "reps": "10",
           "unit": "set",
-          "load": null,
+          "load": "10",
           "how": "Stand with your feet wide and toes turned out a little. Shift onto one leg and sit down into a deep squat on that side, keeping the other leg straight with the heel down and toes up. Push back up and shift to the other side. Hold a weight at your chest for extra load.",
           "timers": [],
           "needsLoad": true
