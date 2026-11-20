@@ -838,8 +838,9 @@ function exerciseBody(key, e, parent, part) {
   let done = Math.min(Number(store(doneKey)) || 0, e.sets || 0);
   const unit = e.unit || 'set';
   const out = [];
-  out.push(e.sets && e.reps
-    ? h('p', { class: 'dose' }, `${e.sets} × ${e.reps}`)
+  const dose = e.sets && e.reps ? `${e.sets} × ${e.reps}` + (e.hold ? `, ${e.hold} s hold` : '') : (e.sets && e.hold ? `${e.sets} × ${e.hold} s hold` : null);
+  out.push(dose
+    ? h('p', { class: 'dose' }, dose)
     : h('p', { class: 'dose unset' }, 'Sets and reps not set yet'));
   if (e.load || e.needsLoad) out.push(h('p', { class: 'load' }, 'Weight: ', e.load ? h('b', {}, e.load) : 'not set yet'));
   if (e.how) out.push(h('p', { class: 'how' }, e.how));
@@ -870,7 +871,7 @@ function exerciseBody(key, e, parent, part) {
     out.push(row);
   }
   if (part) out.push(part);
-  out.push(h('button', { type: 'button', class: 'btn quiet ex-edit', onclick: () => Log.exerciseSheet(parent ? { workout: key, exercise: parent, variant: e } : { workout: key, exercise: e }) }, 'Edit sets, reps and weight'));
+  out.push(h('button', { type: 'button', class: 'btn quiet ex-edit', onclick: () => Log.exerciseSheet(parent ? { workout: key, exercise: parent, variant: e } : { workout: key, exercise: e }) }, 'Edit this exercise'));
   return out;
 }
 

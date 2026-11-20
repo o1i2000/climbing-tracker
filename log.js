@@ -487,6 +487,8 @@ function exerciseSheet({ workout, exercise, variant }) {
     const sets = h('input', { type: 'number', min: '1', max: '30', step: '1', inputmode: 'numeric', placeholder: 'e.g. 4', value: target.sets == null ? '' : String(target.sets) });
     const reps = h('input', { type: 'text', maxlength: '40', autocomplete: 'off', placeholder: 'e.g. 8 each side', value: target.reps || '' });
     const load = h('input', { type: 'text', maxlength: '40', autocomplete: 'off', placeholder: 'e.g. 12 kg', value: target.load || '' });
+    const how = h('textarea', { rows: '5', maxlength: '600', placeholder: 'How to do it, in a few lines', value: target.how || '' });
+    how.value = target.how || '';
     const hasHold = 'hold' in target;
     const hold = h('input', { type: 'number', min: '1', max: '600', step: '1', inputmode: 'numeric', placeholder: 'e.g. 30', value: target.hold == null ? '' : String(target.hold) });
     const err = h('p', { class: 'err', role: 'alert' });
@@ -495,11 +497,12 @@ function exerciseSheet({ workout, exercise, variant }) {
       h('div', { class: 'pair' }, field('Sets', sets), field('Reps or time', reps)),
       field('Weight', load, 'Leave empty if it is bodyweight or not set yet.'),
       hasHold ? field('Hold time (seconds)', hold, 'Adds a timer button to the exercise. Leave empty for no timer.') : null,
+      field('Description', how),
       err,
       saveNote(),
       h('div', { class: 'sheet-actions' }, h('button', { type: 'button', class: 'btn primary block', onclick: () => {
         const n = sets.value === '' ? null : Math.max(1, Math.round(Number(sets.value)));
-        const fields = { sets: n, reps: reps.value.trim() || null, load: load.value.trim() || null };
+        const fields = { sets: n, reps: reps.value.trim() || null, load: load.value.trim() || null, how: how.value.trim() };
         if (hasHold) {
           const hv = hold.value.trim() === '' ? null : Number(hold.value);
           if (hv != null && !(Number.isFinite(hv) && hv >= 1 && hv <= 600)) { err.textContent = 'The hold time must be from 1 to 600 seconds.'; err.hidden = false; hold.focus(); return; }

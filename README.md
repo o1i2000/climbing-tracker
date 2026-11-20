@@ -55,7 +55,8 @@ Previous sets. The fields start from the last saved set, and unsaved typing is k
 browser so a re-render does not wipe it. Set `track: true` on any other exercise in `data.json` to switch it on there.
 
 ## Stretching routine
-`workouts.Stretching` holds the seven stretches from Limber. Stretching has no weekly tick buttons (its target is
-sessions per week, not parts). An exercise with a `hold` key (seconds or null) gets a Hold field in the Edit sheet and
-a timer button once it is set. The standing weighted pancake uses `track: true`, so it has editable weight and time
-with a history of previous sets.
+`workouts.Stretching` holds seven stretches (hip raises over a bottle, pigeon, weighted pancake, wrists, standing straight
+leg, low lunge, wide leg side squats). Stretching has no weekly tick buttons (its target is sessions per week, not
+parts). The Edit sheet changes sets, reps, weight and the description of any exercise. An exercise with a `hold` key
+(seconds or null) also gets a Hold field and a timer button once it is set. The weighted pancake uses `track: true`,
+so it has editable weight and time with a history of previous sets.
