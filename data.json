@@ -626,7 +626,7 @@
       "text": "Open Pull or Weakness and tick off the easy exercises one by one. They count for the week (last 7 days). Tick off every exercise and the whole session counts as done."
     }
   ],
-  "rev": 23,
+  "rev": 24,
   "workouts": {
     "Weakness": {
       "title": "Weakness session",
@@ -914,6 +914,15 @@
       "load": 25,
       "seconds": 10,
       "id": "omwmh5kmq9289m"
+    },
+    {
+      "date": "2026-11-20",
+      "session": "Stretching",
+      "exercise": "s-pancake",
+      "name": "Standing weighted pancake",
+      "load": 10,
+      "seconds": null,
+      "id": "omwp1fl3ltmlfg"
     }
   ]
 }
