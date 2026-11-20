@@ -66,3 +66,12 @@ On a Stretching exercise, `Mark done` (or the set dots when `sets` is set) ticks
 browser under `done:<date>:<id>` and `fin:<date>:<id>`, so they reset on their own each day. The header shows
 `Today: n of 7 done` and `This week: n of 3 sessions logged`. When every stretch is ticked it prompts you to log the
 session; nothing is logged automatically. The app also refreshes its idea of today when it is reopened after midnight.
+
+## Same-day shoulder warning
+`data.clashes` lists groups of exercises that should not share a day. The shoulder group is the Pull day cuff rows and
+I Y T plus the Weakness day face pulls and Y's to I's. Each group has a `title`, a short `what`, the `exercises` (ids) and
+the `advice` shown in the sheet. Only exercises from different sessions clash, so cuff rows and I Y T together on a Pull
+day never warn. The check (`Log.clashFor` in `log.js`) looks at parts ticked and sessions logged on the same date, and
+the warning shows the names and the total sets. It appears when you tick an exercise (`Tick it off anyway` or
+`Leave it for another day`) and when you save a session that would put both days together (`Log it anyway` or
+`Go back`). Nothing is blocked; the warning only asks first. Add another entry to `clashes` to guard other pairs.

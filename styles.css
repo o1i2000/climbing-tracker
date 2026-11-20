@@ -344,3 +344,10 @@ details.fold.how > summary { font-size: 16px; min-height: 40px; }
 /* ---------- done today (stretching) ---------- */
 .ex.finished .ex-n { background: var(--ink); color: var(--surface); font-size: 18px; }
 .ex.finished h3 { color: var(--ink-2); }
+
+/* ---------- warning sheet ---------- */
+.warn { margin-top: 4px; }
+.warn p { font-size: 16px; line-height: 1.45; }
+.warn p + p { margin-top: 10px; }
+.warn + .warn { margin-top: 16px; }
+.sheet .sheet-actions .btn.quiet { align-self: center; }

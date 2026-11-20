@@ -632,9 +632,13 @@
     {
       "title": "Single exercises",
       "text": "Open Pull or Weakness and tick off the easy exercises one by one. They count for the week (last 7 days). Tick off every exercise and the whole session counts as done."
+    },
+    {
+      "title": "Shoulder work",
+      "text": "Rotator cuff rows and I Y T (Pull day) plus face pulls and Y's to I's (Weakness day) add up to about 18 sets of cuff and rear-delt work. Keep them on different days. The app warns you if you tick or log both on the same day."
     }
   ],
-  "rev": 31,
+  "rev": 32,
   "workouts": {
     "Weakness": {
       "title": "Weakness session",
@@ -974,6 +978,20 @@
       "load": 10,
       "seconds": null,
       "id": "omwp1louwk9ftr"
+    }
+  ],
+  "clashes": [
+    {
+      "id": "shoulder",
+      "title": "Lots of shoulder work for one day",
+      "what": "cuff and rear-delt work",
+      "exercises": [
+        "p-cuff",
+        "p-iyt",
+        "w-face",
+        "w-yi"
+      ],
+      "advice": "It is better spread over two days so your shoulders can recover. If you do both anyway, halve the sets of each and stop a couple of reps short of failure."
     }
   ]
 }

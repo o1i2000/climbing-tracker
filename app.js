@@ -791,8 +791,13 @@ function partControl(key, e, detail) {
       h('span', { class: 'part-label' }, ringIcon('done', 22), `Ticked off ${fmt(hits[0].date)}`),
       h('button', { type: 'button', class: 'btn quiet', onclick: () => Log.submit(hits.map(x => ({ id: opId(), op: 'deletePart', at: localISO(), target: x.id }))) }, 'Undo'));
   }
-  return h('div', { class: 'part' }, h('button', { type: 'button', class: 'btn', onclick: () => Log.submit([{ id: opId(), op: 'addPart', at: localISO(),
-    part: { date: today, session: key, exercise: e.id, name: shortName(e.name), detail: detail() || undefined } }]) }, 'Tick off for this week'));
+  const tick = () => Log.submit([{ id: opId(), op: 'addPart', at: localISO(),
+    part: { date: today, session: key, exercise: e.id, name: shortName(e.name), detail: detail() || undefined } }]);
+  return h('div', { class: 'part' }, h('button', { type: 'button', class: 'btn', onclick: () => {
+    const hits = Log.clashFor(data, today, { session: key, exercise: e.id });
+    if (hits.length) Log.warnSheet({ hits, confirmLabel: 'Tick it off anyway', onConfirm: tick });
+    else tick();
+  } }, 'Tick off for this week'));
 }
 
 const kgText = v => `${Number.isInteger(v) ? v : Number(v.toFixed(2))} kg`;

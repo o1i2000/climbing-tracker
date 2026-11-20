@@ -275,6 +275,54 @@ function errBox() { return h('p', { class: 'err', role: 'alert', hidden: true })
 function showErr(box, msg) { box.textContent = msg; box.hidden = false; box.scrollIntoView({ block: 'nearest' }); }
 
 /* ---------- Log a session ---------- */
+/* Groups of exercises that should not all land on one day (data.clashes). Only exercises from
+   different sessions clash: cuff rows and I Y T belong together on Pull day. */
+function findExercise(d, id) {
+  for (const [s, w] of Object.entries(d.workouts || {})) {
+    const e = w.exercises.find(x => x.id === id);
+    if (e) return { id, session: s, ex: e };
+  }
+  return null;
+}
+function clashFor(d, day, { session, exercise }) {
+  const out = [];
+  for (const c of d.clashes || []) {
+    const members = c.exercises.map(id => findExercise(d, id)).filter(Boolean);
+    const adding = exercise ? members.filter(m => m.id === exercise) : members.filter(m => m.session === session);
+    if (!adding.length) continue;
+    const mine = new Set(adding.map(m => m.session));
+    const already = members.filter(m => !mine.has(m.session) && (
+      (d.parts || []).some(p => p.date === day && p.exercise === m.id) ||
+      (d.sessions || []).some(s => s.date === day && s.type === m.session)));
+    if (!already.length) continue;
+    out.push({ id: c.id, title: c.title, what: c.what, advice: c.advice, ids: [...adding, ...already].map(m => m.id) });
+  }
+  return out.map(x => withTotals(d, x));
+}
+function withTotals(d, x) {
+  const ex = x.ids.map(id => findExercise(d, id).ex);
+  return { ...x, names: ex.map(e => e.name), sets: ex.reduce((n, e) => n + (e.sets || 0), 0) };
+}
+function clashForSessions(d, day, types) {
+  const sim = { ...d, sessions: [...(d.sessions || []), ...types.map(t => ({ date: day, type: t }))] };
+  const byId = new Map();
+  for (const t of types) for (const hit of clashFor(sim, day, { session: t })) {
+    const prev = byId.get(hit.id);
+    byId.set(hit.id, prev ? { ...prev, ids: [...new Set([...prev.ids, ...hit.ids])] } : hit);
+  }
+  return [...byId.values()].map(x => withTotals(d, x));
+}
+const listNames = a => a.length < 2 ? a.join('') : `${a.slice(0, -1).join(', ')} and ${a[a.length - 1]}`;
+function warnSheet({ hits, confirmLabel, backLabel, onConfirm }) {
+  return sheet(hits[0].title, close => h('div', {},
+    hits.map(x => h('div', { class: 'warn' },
+      h('p', {}, `That puts ${listNames(x.names)} on the same day` + (x.sets ? `: about ${x.sets} sets of ${x.what}.` : '.')),
+      h('p', { class: 'sub' }, x.advice))),
+    h('div', { class: 'sheet-actions' },
+      h('button', { type: 'button', class: 'btn primary block', onclick: close }, backLabel || 'Leave it for another day'),
+      h('button', { type: 'button', class: 'btn quiet', onclick: () => { close(); onConfirm(); } }, confirmLabel))));
+}
+
 function sessionSheet({ today, suggested, readiness, title: prefill }) {
   sheet('Log a session', close => {
     const type = multiChips(TYPES, suggested || [], 'Session type');
@@ -288,11 +336,17 @@ function sessionSheet({ today, suggested, readiness, title: prefill }) {
       if (!types.length) return showErr(err, 'Pick at least one session type.');
       if (!date.value) return showErr(err, 'Pick a date.');
       const r = ready.get() ? Number(ready.get()) : null;
-      if (r) ls.set('readiness:' + date.value, String(r));
-      close();
-      submit(types.map(t => ({ id: uid(), op: 'addSession', at: isoToday(), session: {
-        date: date.value, type: t, title: types.length === 1 ? (title.value.trim() || t) : t, readiness: r, details: notes.value.trim(),
-      } })));
+      const day = date.value;
+      const doSave = () => {
+        if (r) ls.set('readiness:' + day, String(r));
+        close();
+        submit(types.map(t => ({ id: uid(), op: 'addSession', at: isoToday(), session: {
+          date: day, type: t, title: types.length === 1 ? (title.value.trim() || t) : t, readiness: r, details: notes.value.trim(),
+        } })));
+      };
+      const hits = clashForSessions(current(), day, types);
+      if (hits.length) warnSheet({ hits, confirmLabel: 'Log it anyway', backLabel: 'Go back', onConfirm: doSave });
+      else doSave();
     } }, 'Save session');
     return h('div', {},
       h('div', { class: 'f' }, h('span', { class: 'f-l' }, 'Type'), type.el,
@@ -564,5 +618,7 @@ const api = {
   _parseTindeq: parseTindeq, _applyOp: applyOp,
 };
 api.uid = uid;
+api.clashFor = clashFor;
+api.warnSheet = warnSheet;
 window.Log = api;
 })();
