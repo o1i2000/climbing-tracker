@@ -802,47 +802,63 @@ function partControl(key, e, detail) {
 
 const kgText = v => `${Number.isInteger(v) ? v : Number(v.toFixed(2))} kg`;
 
-/* Weight and time you can edit, a timer that uses that time, and the sets you logged before. Switched on by `track: true`. */
+/* Weight and time you can edit, a timer that uses that time, and the sets you logged before. `track: true` logs weight and
+   time. `track: "reps"` logs weight and reps for each set (weighted pullups), with no timer, so every set can differ. */
 function trackPanel(key, e) {
   const { data, today } = state;
+  const repsMode = e.track === 'reps';
   const rows = (data.setLog || []).filter(x => x.exercise === e.id && x.date <= today).reverse().sort((x, y) => y.date.localeCompare(x.date));
   const last = rows[0];
   const draftKey = `track:${e.id}`;
   let draft = null;
   try { draft = JSON.parse(store(draftKey) || 'null'); } catch (x) { draft = null; }
-  const startVal = (d, k) => draft ? draft[d] : (last && last[k] != null ? String(last[k]) : '');
+  /* with nothing logged yet, reps mode starts from the planned weight and reps */
+  const planned = k => {
+    if (!repsMode) return '';
+    const v = k === 'load' ? parseFloat(e.load) : (/^\d+$/.test(String(e.reps || '').trim()) ? Number(e.reps) : NaN);
+    return Number.isFinite(v) ? String(v) : '';
+  };
+  const startVal = (d, k) => draft ? (draft[d] == null ? '' : draft[d]) : (last && last[k] != null ? String(last[k]) : planned(k));
   const wIn = h('input', { type: 'number', inputmode: 'decimal', min: '0', max: '200', step: '0.5', placeholder: 'e.g. 10', value: startVal('load', 'load') });
-  const sIn = h('input', { type: 'number', inputmode: 'numeric', min: '1', max: '3600', step: '1', placeholder: 'e.g. 60', value: startVal('seconds', 'seconds') });
+  const sIn = repsMode ? null : h('input', { type: 'number', inputmode: 'numeric', min: '1', max: '3600', step: '1', placeholder: 'e.g. 60', value: startVal('seconds', 'seconds') });
+  const rIn = repsMode ? h('input', { type: 'number', inputmode: 'numeric', min: '1', max: '100', step: '1', placeholder: 'e.g. 5', value: startVal('reps', 'reps') }) : null;
   const err = h('p', { class: 'err', role: 'alert' });
   err.hidden = true;
   const fail = msg => { err.textContent = msg; err.hidden = false; };
-  const keep = () => { err.hidden = true; store(draftKey, JSON.stringify({ load: wIn.value, seconds: sIn.value })); };
-  wIn.addEventListener('input', keep); sIn.addEventListener('input', keep);
-  const read = () => ({
-    load: wIn.value.trim() === '' ? null : Number(wIn.value),
-    seconds: sIn.value.trim() === '' ? null : Number(sIn.value),
-  });
+  const keep = () => { err.hidden = true; store(draftKey, JSON.stringify({ load: wIn.value, seconds: sIn ? sIn.value : '', reps: rIn ? rIn.value : '' })); };
+  for (const i of [wIn, sIn, rIn]) if (i) i.addEventListener('input', keep);
+  const num = i => (!i || i.value.trim() === '') ? null : Number(i.value);
+  const read = () => ({ load: num(wIn), seconds: num(sIn), reps: num(rIn) });
   const secondsOk = v => Number.isFinite(v) && v >= 1 && v <= 3600;
 
-  const start = h('button', { type: 'button', class: 'btn', onclick: () => {
+  const start = repsMode ? null : h('button', { type: 'button', class: 'btn', onclick: () => {
     const { seconds } = read();
     if (!secondsOk(seconds)) { fail('Enter a time in seconds first, from 1 to 3600.'); sIn.focus(); return; }
     err.hidden = true;
     startTimer(e.name, Math.round(seconds));
   } }, 'Start timer');
   const save = h('button', { type: 'button', class: 'btn primary', onclick: () => {
-    const { load, seconds } = read();
-    if (load == null && seconds == null) { fail('Enter a weight or a time first.'); return; }
+    const { load, seconds, reps } = read();
+    if (load == null && seconds == null && reps == null) { fail(repsMode ? 'Enter a weight or reps first.' : 'Enter a weight or a time first.'); return; }
     if (load != null && !(Number.isFinite(load) && load >= 0 && load <= 200)) { fail('The weight must be from 0 to 200 kg.'); wIn.focus(); return; }
     if (seconds != null && !secondsOk(seconds)) { fail('The time must be from 1 to 3600 seconds.'); sIn.focus(); return; }
+    if (reps != null && !(Number.isInteger(reps) && reps >= 1 && reps <= 100)) { fail('The reps must be a whole number from 1 to 100.'); rIn.focus(); return; }
     store(draftKey, '');
     if (e.sets) store(setsKey(today, e.id), String(Math.min(setsDone(today, e) + 1, e.sets)));
     Log.submit([{ id: opId(), op: 'addSetLog', at: localISO(),
-      entry: { date: today, session: key, exercise: e.id, name: e.name, load, seconds: seconds == null ? null : Math.round(seconds) } }]);
+      entry: { date: today, session: key, exercise: e.id, name: e.name, load, seconds: seconds == null ? null : Math.round(seconds), ...(repsMode ? { reps } : {}) } }]);
   } }, 'Save this set');
 
+  /* today's sets are numbered in the order you did them */
+  const todayIds = rows.filter(x => x.date === today).map(x => x.id).reverse();
+  const setNo = x => todayIds.includes(x.id) ? `Set ${todayIds.indexOf(x.id) + 1}: ` : '';
+  const what = x => {
+    const w = x.load != null ? kgText(x.load) : null;
+    const r = x.reps != null ? (w ? `× ${x.reps}` : `${x.reps} reps`) : null;
+    return [[w, r].filter(Boolean).join(' '), x.seconds != null ? `${x.seconds} s` : null].filter(Boolean).join(', ');
+  };
   const item = x => h('li', {},
-    h('span', { class: 'rt' }, [x.load != null ? kgText(x.load) : null, x.seconds != null ? `${x.seconds} s` : null].filter(Boolean).join(', ')),
+    h('span', { class: 'rt' }, setNo(x) + what(x)),
     h('span', { class: 'rm' }, fmt(x.date)),
     Log.confirmButton('Remove', 'Tap again to remove', () => Log.submit([{ id: opId(), op: 'deleteSetLog', at: localISO(), target: x.id }])));
   const hist = h('div', { class: 'tlog' });
@@ -854,8 +870,10 @@ function trackPanel(key, e) {
   return h('div', { class: 'track' },
     h('div', { class: 'pair' },
       h('label', { class: 'f' }, h('span', { class: 'f-l' }, 'Weight (kg)'), wIn),
-      h('label', { class: 'f' }, h('span', { class: 'f-l' }, 'Time (seconds)'), sIn)),
-    h('div', { class: 'track-actions' }, start, save), err, hist);
+      repsMode
+        ? h('label', { class: 'f' }, h('span', { class: 'f-l' }, 'Reps'), rIn)
+        : h('label', { class: 'f' }, h('span', { class: 'f-l' }, 'Time (seconds)'), sIn)),
+    h('div', { class: repsMode ? 'track-actions one' : 'track-actions' }, ...(repsMode ? [save] : [start, save])), err, hist);
 }
 
 function exerciseBody(key, e, parent, part) {
@@ -892,7 +910,7 @@ function exerciseBody(key, e, parent, part) {
     draw();
     out.push(dots, count);
   }
-  if (e.track && !parent) out.push(trackPanel(key, e));
+  if (e.track) out.push(trackPanel(key, e));
   const timers = e.timers && e.timers.length ? e.timers : (e.hold ? [{ label: 'Hold', s: e.hold, work: true }] : []);
   if (e.hold == null && 'hold' in e) out.push(h('p', { class: 'load' }, 'Hold time: not set yet'));
   if (timers.length) {

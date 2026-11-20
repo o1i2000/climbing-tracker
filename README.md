@@ -53,6 +53,13 @@ Start timer button that counts down the entered time, and Save this set. Saved s
 (`{id, date, session, exercise, name, load, seconds}`, ops `addSetLog` / `deleteSetLog`) and appear newest first under
 Previous sets. The fields start from the last saved set, and unsaved typing is kept in `track:<exercise id>` in the
 browser so a re-render does not wipe it. Set `track: true` on any other exercise in `data.json` to switch it on there.
+Today's sets are numbered in the order you did them (Set 1, Set 2) and saving a set ticks the next dot.
+
+`track: "reps"` logs weight and reps for each set instead of time (no timer), so every set can use a different weight.
+It is on for Weighted pullups, which is a variant of Main pull, and works on any variant. Entries gain `reps`
+(`{..., load, reps, seconds: null}`). With nothing saved yet the fields start from the planned weight and reps; after
+that they start from your last set, so a pyramid such as 30, 35, 40 kg is one edit per set. Reps must be a whole number
+from 1 to 100 and weight 0 to 200 kg (0 is bodyweight).
 
 ## Stretching routine
 `workouts.Stretching` holds seven stretches (hip raises over a bottle, pigeon, weighted pancake, wrists, standing straight
