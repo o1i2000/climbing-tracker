@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-18",
+  "updated": "2026-11-20",
   "athlete": {
     "bodyweight": 71,
     "goal": "One-arm hang on the 20mm"
@@ -107,6 +107,14 @@
       "readiness": 2,
       "details": "",
       "id": "omwmm1s1f8h81t"
+    },
+    {
+      "date": "2026-11-20",
+      "type": "Finger",
+      "title": "20mm pulls and max force",
+      "readiness": 4,
+      "details": "",
+      "id": "omwox6p8irk0hs"
     }
   ],
   "lists": [
@@ -608,7 +616,7 @@
       "text": "Open Pull or Weakness and tick off the easy exercises one by one. They count for the week (last 7 days). Tick off every exercise and the whole session counts as done."
     }
   ],
-  "rev": 15,
+  "rev": 16,
   "workouts": {
     "Weakness": {
       "title": "Weakness session",
