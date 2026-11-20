@@ -626,7 +626,7 @@
       "text": "Open Pull or Weakness and tick off the easy exercises one by one. They count for the week (last 7 days). Tick off every exercise and the whole session counts as done."
     }
   ],
-  "rev": 25,
+  "rev": 26,
   "workouts": {
     "Weakness": {
       "title": "Weakness session",
@@ -843,13 +843,13 @@
         {
           "id": "s-straight",
           "name": "Standing straight leg stretch",
-          "sets": null,
+          "sets": 3,
           "reps": null,
           "unit": "set",
-          "load": null,
+          "load": "10",
           "how": "Stand with your feet about hip width apart and your knees straight. Hinge forward at the hips and reach toward your toes, keeping your back long. Hold where you feel a strong stretch behind your legs, then roll back up slowly.",
           "timers": [],
-          "hold": null
+          "hold": 50
         },
         {
           "id": "s-lunge",
@@ -941,6 +941,15 @@
       "load": 10,
       "seconds": null,
       "id": "omwp1fmivz7do1"
+    },
+    {
+      "date": "2026-11-20",
+      "session": "Stretching",
+      "exercise": "s-pancake",
+      "name": "Standing weighted pancake",
+      "load": 10,
+      "seconds": null,
+      "id": "omwp1fn974v2k3"
     }
   ]
 }
