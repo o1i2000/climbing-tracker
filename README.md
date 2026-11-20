@@ -75,3 +75,10 @@ day never warn. The check (`Log.clashFor` in `log.js`) looks at parts ticked and
 the warning shows the names and the total sets. It appears when you tick an exercise (`Tick it off anyway` or
 `Leave it for another day`) and when you save a session that would put both days together (`Log it anyway` or
 `Go back`). Nothing is blocked; the warning only asks first. Add another entry to `clashes` to guard other pairs.
+
+## Narrow screens
+Layout grids use `minmax(0, 1fr)` so a column can shrink instead of widening the page. The Today title is sized from the
+screen width (`min(52px, (100vw - 96px) / 5.7)`), so a long day name such as Weakness or Stretching cannot push the page
+past the edge. The sheets clip sideways overflow, and the date field drops the iPhone Safari native width so it follows
+the sheet. Check by opening Log a session at 320, 375 and 390 px wide with a wide font and confirming the page and the
+sheet have the same scroll width as the screen.

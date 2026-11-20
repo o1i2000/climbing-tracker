@@ -62,7 +62,7 @@ button { font: inherit; color: inherit; }
 /* hero: the one loud thing on the page */
 .hero { padding: 22px 0 18px; }
 .kicker { font-size: 15px; color: var(--ink-2); }
-.hero-title { display: flex; align-items: center; gap: 14px; margin-top: 6px; font-size: 52px; line-height: 1; font-weight: 700; letter-spacing: -0.03em; }
+.hero-title { display: flex; align-items: center; gap: 14px; margin-top: 6px; font-size: min(52px, calc((100vw - 96px) / 5.7)); line-height: 1; font-weight: 700; letter-spacing: -0.03em; }
 .hero-title svg { flex: none; width: 46px; height: 46px; }
 .hero-why { margin-top: 12px; font-size: 17px; line-height: 1.4; }
 .hero-logged { margin-top: 8px; font-size: 14px; color: var(--ink-2); }
@@ -70,7 +70,7 @@ button { font: inherit; color: inherit; }
 .ask { margin: 6px 0 4px; }
 .ask-label { font-size: 15px; font-weight: 600; }
 .ask-hint { font-size: 13px; color: var(--ink-2); margin-top: 2px; }
-.scale { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 10px; }
+.scale { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; margin-top: 10px; }
 .scale button { min-height: 48px; border-radius: 14px; border: 1.5px solid var(--axis); background: transparent; font-size: 19px; font-weight: 600; cursor: pointer; }
 .scale button[aria-checked="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
 
@@ -92,7 +92,7 @@ button { font: inherit; color: inherit; }
 .queue .dots { font-size: 13px; letter-spacing: 0.08em; text-align: right; color: var(--ink-2); }
 
 /* figures: open numbers on the page */
-.figs { display: grid; grid-template-columns: repeat(3, 1fr); margin-top: 12px; }
+.figs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 12px; }
 .fig { padding-right: 10px; }
 .fig + .fig { padding-left: 14px; border-left: 1px solid var(--grid); }
 .fig b { display: block; font-size: 30px; line-height: 1.05; font-weight: 700; letter-spacing: -0.02em; }
@@ -111,7 +111,7 @@ button { font: inherit; color: inherit; }
 .card h3 { font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
 .card .sub { margin-top: 2px; font-size: 13px; color: var(--ink-2); }
 
-.hands { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px; }
+.hands { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; margin-top: 14px; }
 .hand { padding: 14px; background: var(--surface); border-radius: 18px; box-shadow: 0 0 0 1px var(--ring); min-width: 0; }
 .hand .who { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: var(--ink-2); }
 .key { display: inline-block; width: 16px; height: 3px; border-radius: 2px; }
@@ -196,7 +196,7 @@ details.fold > summary { cursor: pointer; font-size: 20px; font-weight: 700; let
 .tip-install b { font-weight: 700; }
 
 /* bottom tabs */
-.tabs { position: fixed; inset: auto 0 0 0; display: grid; grid-template-columns: repeat(4, 1fr); padding: 6px 8px calc(6px + env(safe-area-inset-bottom)); background: color-mix(in srgb, var(--page) 88%, transparent); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); border-top: 1px solid var(--grid); }
+.tabs { position: fixed; inset: auto 0 0 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); padding: 6px 8px calc(6px + env(safe-area-inset-bottom)); background: color-mix(in srgb, var(--page) 88%, transparent); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); border-top: 1px solid var(--grid); }
 .tabs button { display: flex; flex-direction: column; align-items: center; gap: 2px; min-height: 52px; padding: 6px 0 4px; border: 0; background: transparent; color: var(--muted); font-size: 11.5px; font-weight: 600; cursor: pointer; }
 .tabs svg { width: 25px; height: 25px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .tabs svg .fill { fill: currentColor; stroke: none; }
@@ -230,7 +230,7 @@ details.fold > summary::after { margin-left: auto; margin-right: 4px; }
 
 body.noscroll { overflow: hidden; }
 .sheet-back { position: fixed; inset: 0; z-index: 50; background: rgba(0, 0, 0, 0.45); display: flex; align-items: flex-end; justify-content: center; }
-.sheet { width: 100%; max-width: 540px; max-height: 90vh; max-height: 90dvh; overflow-y: auto; overscroll-behavior: contain; background: var(--surface); border-radius: 22px 22px 0 0; padding: 14px 18px calc(24px + env(safe-area-inset-bottom)); outline: none; }
+.sheet { width: 100%; min-width: 0; max-width: 540px; max-height: 90vh; max-height: 90dvh; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; background: var(--surface); border-radius: 22px 22px 0 0; padding: 14px 18px calc(24px + env(safe-area-inset-bottom)); outline: none; }
 @media (prefers-reduced-motion: no-preference) {
   .sheet { animation: rise 0.22s ease-out; }
   @keyframes rise { from { transform: translateY(28px); opacity: 0.5; } }
@@ -245,7 +245,7 @@ body.noscroll { overflow: hidden; }
 .f-h { display: block; font-size: 13px; color: var(--ink-2); margin-top: 6px; }
 .f input, .f textarea, input.field { width: 100%; min-height: 50px; padding: 10px 12px; font: inherit; font-size: 16px; color: var(--ink); background: var(--page); border: 1.5px solid var(--axis); border-radius: 12px; }
 .f textarea { resize: vertical; }
-.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.pair { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
 .chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .chips button { min-height: 46px; padding: 0 16px; border-radius: 23px; border: 1.5px solid var(--axis); background: transparent; font-weight: 650; cursor: pointer; }
 .chips button[aria-checked="true"], .chips button[aria-pressed="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
@@ -317,7 +317,7 @@ details.fold.how > summary { font-size: 16px; min-height: 40px; }
 .t-btns button { min-height: 44px; padding: 0 14px; border-radius: 12px; border: 1.5px solid currentColor; background: transparent; color: inherit; font-weight: 650; cursor: pointer; }
 .timer.done { background: #0a7a0a; color: #fff; }
 
-.hero-title.long { font-size: 40px; }
+.hero-title.long { font-size: min(40px, calc((100vw - 96px) / 5.7)); }
 @media (min-width: 420px) { .hero-title.long { font-size: 46px; } }
 .variant-body { margin-top: 4px; }
 .ex > .chips { margin-top: 12px; }
@@ -336,7 +336,7 @@ details.fold.how > summary { font-size: 16px; min-height: 40px; }
 /* ---------- tracked exercise: weight, time, previous sets ---------- */
 .track { margin-top: 16px; padding: 4px 14px 16px; background: var(--wash); border-radius: 14px; }
 .track .f { margin-top: 12px; }
-.track-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+.track-actions { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; margin-top: 14px; }
 .track-actions .btn { min-height: 48px; }
 .tlog h4 { margin-top: 18px; font-size: 15px; font-weight: 700; }
 .tlog .fold { margin-top: 6px; }
@@ -351,3 +351,9 @@ details.fold.how > summary { font-size: 16px; min-height: 40px; }
 .warn p + p { margin-top: 10px; }
 .warn + .warn { margin-top: 16px; }
 .sheet .sheet-actions .btn.quiet { align-self: center; }
+
+/* Form controls stay inside the sheet. iPhone Safari gives a date field its own width unless it is told to follow the box. */
+.f input, .f textarea { display: block; min-width: 0; max-width: 100%; }
+.f input[type="date"] { -webkit-appearance: none; appearance: none; text-align: left; }
+.f input[type="date"]::-webkit-date-and-time-value { text-align: left; min-width: 0; }
+.tabs button { min-width: 0; overflow: hidden; }
