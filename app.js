@@ -158,6 +158,135 @@ function recommend(data, today, readiness) {
   };
 }
 
+/* ---------- Cycle: weeks, phases, goals ---------- */
+const trainWeeks = c => c.weeks.filter(w => w.phase !== 'Benchmarks').length;
+const weekLabel = (c, w) => (w.phase === 'Benchmarks' ? 'Benchmark week' : `Week ${w.n} of ${trainWeeks(c)}`);
+const weekSpan = (c, idx) => ({ from: addDays(c.start, idx * 7), to: addDays(c.start, idx * 7 + 6) });
+const clamp01 = v => Math.max(0, Math.min(1, v));
+const restText = s => (s % 60 === 0 ? `${s / 60} min` : `${s} s`);
+
+/* Where today falls in the cycle. data.cycle.start is a Monday; each week is seven days. */
+function cycleInfo(data, day) {
+  const c = data.cycle;
+  if (!c || !c.start || !c.weeks || !c.weeks.length) return null;
+  const off = diffDays(day, c.start), total = c.weeks.length;
+  if (off < 0) return { c, kind: 'before', days: -off, idx: 0, week: c.weeks[0] };
+  const idx = Math.floor(off / 7);
+  if (idx >= total) return { c, kind: 'after', idx: total - 1, week: c.weeks[total - 1], end: addDays(c.start, total * 7 - 1) };
+  return { c, kind: 'active', idx, week: c.weeks[idx], dayNo: (off % 7) + 1 };
+}
+
+/* This week's numbers for an exercise: the cycle week can set sets, reps, load and hold, and a deload week
+   (scale) cuts the sets of everything else. The edit button still changes the usual numbers (_base). */
+const CYCLE_FIELDS = ['sets', 'reps', 'load', 'hold'];
+function withCycle(key, e) {
+  const info = cycleInfo(state.data, state.today);
+  if (!info || info.kind !== 'active' || !TRAIN.includes(key)) return e;
+  const w = info.week, rx = (w.rx && w.rx[e.id]) || null, scale = w.scale == null ? 1 : w.scale;
+  const patch = {};
+  if (rx) for (const k of CYCLE_FIELDS) if (rx[k] !== undefined) patch[k] = rx[k];
+  let note = rx && rx.note ? rx.note : '';
+  if (scale !== 1 && patch.sets === undefined && e.sets) {
+    patch.sets = Math.max(1, Math.ceil(e.sets * scale));
+    if (!note) note = `Deload week: ${patch.sets} ${patch.sets === 1 ? 'set' : 'sets'} instead of ${e.sets}. Keep it easy.`;
+  }
+  if (!Object.keys(patch).length && !note) return e;
+  return { ...e, ...patch, cycleNote: note, cycleWeek: w.n, _base: e };
+}
+
+/* Finger hangs are set as a percentage of the latest 20mm Tindeq peak. */
+function fingerPlan(data, f) {
+  const rows = tests20(data);
+  const last = rows[rows.length - 1], bw = data.athlete.bodyweight;
+  const hand = (name, key) => {
+    const load = last[key] * f.pct / 100, gap = bw - load;
+    return { name, key, load, text: `${name}: ${kg(load)} kg of pull, ` + (gap >= 0 ? `${kg(gap)} kg of help` : `${kg(-gap)} kg of added weight`) };
+  };
+  return {
+    head: `${f.hangs} hangs of ${f.seconds} s at ${f.pct}% of your peak, ${restText(f.rest)} rest`,
+    hands: [hand('Left', 'left'), hand('Right', 'right')],
+    from: last,
+  };
+}
+
+/* progress towards each goal, worked out from what is already logged */
+const inCycle = (c, date) => date >= c.start;
+const bestOf = (xs, f) => xs.reduce((a, x) => (a == null || f(x) > f(a) ? x : a), null);
+const benchEntries = (data, id) => (data.benchLog || []).filter(x => x.bench === id).sort((a, b) => a.date.localeCompare(b.date));
+
+function bar({ label, cls, base, now, target, text, baseText, targetText }) {
+  const frac = target === base ? 0 : clamp01(((now == null ? base : now) - base) / (target - base));
+  return { label, cls, frac, text, baseText, targetText, reached: now != null && now >= target };
+}
+const GOAL_METRICS = {
+  peak(data, c, g) {
+    const rows = tests20(data).filter(x => inCycle(c, x.date));
+    return [['Right hand', 's1', 'right'], ['Left hand', 's2', 'left']].map(([label, cls, k]) => {
+      const best = rows.length ? Math.max(...rows.map(x => x[k])) : null;
+      return bar({ label, cls, base: g.baseline[k], now: best, target: g.target[k],
+        text: best == null ? 'No test this cycle yet' : `${kg(best)} kg best this cycle`, baseText: `Start ${kg(g.baseline[k])} kg`, targetText: `Target ${kg(g.target[k])} kg` });
+    });
+  },
+  pullup(data, c, g) {
+    const sets = (data.setLog || []).filter(x => x.exercise === 'p-pullups' && x.load != null && x.reps >= g.target.reps && inCycle(c, x.date));
+    const top = bestOf(sets, x => x.load);
+    return [bar({ label: `Weighted pullup, ${g.target.reps}+ reps`, cls: 'ink', base: g.baseline.load, now: top ? top.load : null, target: g.target.load,
+      text: top ? `${numText(top.load)} kg × ${top.reps} best this cycle` : 'No set of 3 or more this cycle yet',
+      baseText: `Start ${g.baseline.load} kg × ${g.baseline.reps}`, targetText: `Target ${g.target.load} kg × ${g.target.reps}` })];
+  },
+  pinch(data, c, g) {
+    const rows = data.strength.filter(x => x.type === 'Pinch block' && inCycle(c, x.date)).sort((a, b) => a.date.localeCompare(b.date));
+    return [['Right hand', 's1', 'right'], ['Left hand', 's2', 'left']].map(([label, cls, k]) => {
+      const early = rows.find(x => diffDays(x.date, c.start) < 14);
+      const base = early ? early[k] : g.baseline[k];
+      const target = base * (1 + g.targetPct / 100);
+      const best = rows.length ? Math.max(...rows.map(x => x[k])) : null;
+      return bar({ label, cls, base, now: best, target,
+        text: best == null ? 'No pinch test this cycle yet' : `${kg(best)} kg best this cycle`,
+        baseText: early ? `Start ${kg(base)} kg` : `Start ${kg(base)} kg (${shortDate(toUTC(g.baseline.date), true)}, retest in week 1)`,
+        targetText: `Target ${kg(target)} kg` });
+    });
+  },
+  sloper(data, c, g) {
+    const sets = (data.setLog || []).filter(x => x.exercise === 'w-sloper' && x.load != null && inCycle(c, x.date));
+    const top = bestOf(sets, x => x.load);
+    return [bar({ label: 'Sloper roller weight', cls: 'ink', base: g.baseline.load, now: top ? top.load : null, target: g.target.load,
+      text: top ? `${numText(top.load)} kg best this cycle` : 'No sloper sets this cycle yet', baseText: `Start ${g.baseline.load} kg`, targetText: `Target ${g.target.load} kg` })];
+  },
+  list(data, c, g) {
+    const l = data.lists.find(x => x.id === g.list);
+    const total = l ? l.climbs.length : g.target.sent, sent = l ? l.climbs.filter(x => x.sent).length : 0;
+    const cp = g.checkpoint;
+    return [bar({ label: l ? l.name : 'List', cls: 'ink', base: g.baseline.sent, now: sent, target: Math.min(g.target.sent, total || g.target.sent),
+      text: `${sent} of ${total} sent`, baseText: `Start ${g.baseline.sent} of ${total}`,
+      targetText: cp ? `Checkpoint ${cp.sent} by the end of week ${cp.week}, then ${g.target.sent}` : `Target ${g.target.sent}` })];
+  },
+  bench(data, c, g) {
+    const got = g.bench.flatMap(id => benchEntries(data, id)).filter(x => inCycle(c, x.date));
+    const last = got[got.length - 1];
+    return [bar({ label: 'Sent', cls: 'ink', base: 0, now: got.length ? 1 : 0, target: 1,
+      text: last ? `Sent ${last.note} on ${shortDate(toUTC(last.date), true)}` : 'Not sent yet', baseText: '', targetText: 'Target 1 send' })];
+  },
+};
+
+function benchLines(data, c, g, today) {
+  const out = [];
+  for (const id of g.bench || []) {
+    const b = (c.benchmarks || []).find(x => x.id === id);
+    if (!b) continue;
+    const got = benchEntries(data, id);
+    const first = got[0], last = got[got.length - 1];
+    const num = x => (b.unit === 's' ? `${numText(x.value)} s` : x.note);
+    const text = !got.length ? 'No result logged yet'
+      : got.length === 1 ? `First result: ${num(first)} on ${shortDate(toUTC(first.date), true)}`
+      : `${num(first)} → ${num(last)} (${shortDate(toUTC(first.date))} to ${shortDate(toUTC(last.date), true)})`;
+    out.push(h('div', { class: 'bench' },
+      h('div', { class: 'bench-t' }, h('b', {}, b.name), h('span', {}, text)),
+      h('button', { type: 'button', class: 'btn quiet', 'aria-label': `Log a result for ${b.name}`, onclick: () => Log.benchSheet({ bench: b, today }) }, 'Log result')));
+  }
+  return out;
+}
+
 /* ---------- shared pieces ---------- */
 function ringIcon(kind, size) {
   const color = kind === 'go' ? 'var(--good)' : kind === 'wait' ? 'var(--warn)' : 'var(--muted)';
@@ -178,6 +307,24 @@ function getReadiness(today) {
   const v = store('readiness:' + today);
   const n = v == null ? null : Number(v);
   return n >= 1 && n <= 5 ? n : null;
+}
+
+function cycleCard(data, today) {
+  const info = cycleInfo(data, today);
+  if (!info) return null;
+  const { c } = info;
+  const head = info.kind === 'before' ? `Starts ${fmt(c.start)}` : info.kind === 'after' ? 'Cycle finished' : `${weekLabel(c, info.week)}, ${info.week.phase}`;
+  const line = info.kind === 'before' ? `In ${plural(info.days, 'day', 'days')}. Week 1: ${c.weeks[0].title}.`
+    : info.kind === 'after' ? 'Check the goals and plan the next cycle.' : `${info.week.title}. ${info.week.aim}`;
+  const open = () => go('cycle', true);
+  const strip = h('div', { class: 'cy-mini', 'aria-hidden': 'true' }, c.weeks.map((w, i) => h('i', {
+    class: `${info.kind === 'active' ? (i < info.idx ? 'past' : i === info.idx ? 'now' : '') : info.kind === 'after' ? 'past' : ''} ${w.phase.toLowerCase()}` })));
+  return h('div', { class: 'card cy-card tap', role: 'button', tabindex: '0', 'aria-label': `${c.name}. ${head}. ${line} Open the cycle`, onclick: open,
+    onkeydown: e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } } },
+    h('p', { class: 'kicker' }, `${c.name}: ${c.focus}`),
+    h('h3', {}, head),
+    h('p', { class: 'sub' }, line),
+    strip);
 }
 
 function renderToday() {
@@ -211,6 +358,9 @@ function renderToday() {
   const altBtn = (label, types) => h('button', { type: 'button', class: 'btn quiet', onclick: () => Log.sessionSheet({ today, readiness, suggested: types }) }, label);
   root.append(h('div', { class: 'alt-row' }, h('span', {}, 'Too tired for the full session? Log instead:'), altBtn('Normal climb', ['Climb']), altBtn('Stretching', ['Stretching'])));
 
+  const cyc = cycleCard(data, today);
+  if (cyc) root.append(cyc);
+
   // queue: grouped by day, so Finger and Pull sit together but stay separate tasks
   const st = stateAt(data, today);
   const stat = Object.fromEntries(TRAIN.map(t => [t, statusFor(t, st, today)]));
@@ -226,6 +376,7 @@ function renderToday() {
   }
   rows.push({ t: 'Stretching', st: st.Stretching, mates: [], status: { kind: st.Stretching.count7 >= st.Stretching.target ? 'done' : 'go' } });
   const queue = h('ul', { class: 'queue' });
+  const cinfo = cycleInfo(data, today);
   for (const r of rows) {
     const k = r.status.kind;
     const label = k === 'go' ? 'Go' : k === 'wait' ? `Wait until ${fmt(r.status.until)}` : 'Done this week';
@@ -234,6 +385,7 @@ function renderToday() {
     const bits = [r.st.since == null ? 'Not logged yet' : `Last done ${sinceText(r.st.since)}`];
     if (p && p.done) bits.push(k === 'done' && r.st.count7 < r.st.target ? 'every part ticked off' : `${p.done} of ${p.total} parts ticked off`);
     if (r.mates.length) bits.push(`Same day as ${r.mates.join(' and ')}`);
+    if (r.t === 'Finger' && cinfo && cinfo.kind === 'active' && cinfo.week.finger) { const f = cinfo.week.finger; bits.push(`This week: ${f.hangs} × ${f.seconds} s at ${f.pct}% of peak`); }
     const hasW = data.workouts && data.workouts[r.t];
     const open = () => go('plan', true, r.t, 'today');
     queue.append(h('li', hasW ? { class: 'tap', role: 'button', tabindex: '0', 'aria-label': `${r.t}. Open the workout`, onclick: open,
@@ -708,6 +860,106 @@ function renderPlan() {
   return root;
 }
 
+/* ---------- Cycle tab ---------- */
+let cycleSel = null; // week tapped in the strip, to look ahead or back; null means this week
+
+function weekStrip(info, sel, onPick) {
+  const { c } = info;
+  const strip = h('div', { class: 'cy-strip', role: 'group', 'aria-label': 'Weeks of the cycle' });
+  c.weeks.forEach((w, i) => {
+    const span = weekSpan(c, i);
+    const state_ = info.kind === 'active' ? (i < info.idx ? 'past' : i === info.idx ? 'now' : 'next') : (info.kind === 'after' ? 'past' : 'next');
+    const label = `${weekLabel(c, w)}, ${w.phase}, ${fmt(span.from)} to ${fmt(span.to)}${state_ === 'now' ? ', this week' : ''}`;
+    strip.append(h('button', {
+      type: 'button', class: `wk ${state_} ${w.phase.toLowerCase()}`, 'aria-label': label, 'aria-pressed': String(i === sel),
+      onclick: () => onPick(i),
+    }, w.phase === 'Benchmarks' ? 'B' : String(w.n)));
+  });
+  return strip;
+}
+
+function goalCard(data, c, g, today) {
+  const bars = GOAL_METRICS[g.metric] ? GOAL_METRICS[g.metric](data, c, g) : [];
+  const card = h('div', { class: 'card goal' }, h('h3', {}, g.name));
+  for (const b of bars) {
+    card.append(h('div', { class: 'gbar' },
+      h('div', { class: 'row' }, h('span', {}, b.label), h('b', {}, b.reached ? 'Reached' : `${Math.round(b.frac * 100)}%`)),
+      h('div', { class: 'meter', role: 'img', 'aria-label': `${b.label}: ${Math.round(b.frac * 100)}% of the way from the start to the target` },
+        h('div', { class: `fill ${b.cls}`, style: `width:${Math.round(b.frac * 100)}%` })),
+      h('p', { class: 'sub' }, b.text),
+      h('p', { class: 'sub' }, [b.baseText, b.targetText].filter(Boolean).join('. '))));
+  }
+  card.append(...benchLines(data, c, g, today));
+  if (g.stretch) card.append(h('p', { class: 'sub gnote' }, g.stretch));
+  card.append(h('details', { class: 'why' }, h('summary', {}, 'Why this goal'), h('p', {}, g.why)));
+  return card;
+}
+
+function renderCycle() {
+  const { data, today } = state;
+  const info = cycleInfo(data, today);
+  const root = h('div');
+  if (!info) { root.append(section('Cycle', 'No training cycle is set up yet.')); return root; }
+  const { c } = info;
+  const sel = cycleSel != null && cycleSel >= 0 && cycleSel < c.weeks.length ? cycleSel : info.idx;
+  const w = c.weeks[sel], span = weekSpan(c, sel);
+  const here = info.kind === 'active' && sel === info.idx;
+
+  const title = info.kind === 'before' ? `Starts ${fmt(c.start)}`
+    : info.kind === 'after' ? 'Cycle finished' : weekLabel(c, info.week);
+  const why = info.kind === 'before' ? `${plural(info.days, 'day', 'days')} to go. Week 1 is ${c.weeks[0].title.toLowerCase()}.`
+    : info.kind === 'after' ? `The cycle ran to ${fmt(info.end)}. Check the goals below, then plan the next cycle.`
+    : `${info.week.phase} week, ${fmt(weekSpan(c, info.idx).from)} to ${fmt(weekSpan(c, info.idx).to)}.`;
+  root.append(h('section', { class: 'hero' },
+    h('p', { class: 'kicker' }, `${c.name}: ${c.focus}`),
+    h('h1', { class: title.length > 12 ? 'hero-title long' : 'hero-title' }, title),
+    h('p', { class: 'hero-why' }, why)));
+  root.append(weekStrip(info, sel, i => { cycleSel = i === info.idx && info.kind === 'active' ? null : i; mount(); }));
+  root.append(h('p', { class: 'legend wk-legend' }, 'Tap a week to look at it. Dashed is the deload, B is benchmark week.'));
+
+  // the selected week
+  const sec = h('section', { class: 'section' },
+    h('h2', {}, here ? `This week: ${w.title}` : `${weekLabel(c, w)}: ${w.title}`),
+    here ? null : h('p', { class: 'sub' }, `${w.phase}, ${fmt(span.from)} to ${fmt(span.to)}${info.kind === 'active' && sel < info.idx ? '. Already done.' : '.'}`));
+  if (!here && info.kind === 'active') sec.append(h('button', { type: 'button', class: 'btn quiet cy-back', onclick: () => { cycleSel = null; mount(); } }, 'Back to this week'));
+  sec.append(h('p', { class: 'cy-aim' }, w.aim), h('p', { class: 'sub' }, c.phases[w.phase] || ''));
+  const sess = h('ul', { class: 'cy-sess' });
+  if (w.finger) {
+    const fp = fingerPlan(data, w.finger);
+    sess.append(h('li', {}, h('b', {}, 'Finger'), h('span', { class: 'cy-main' }, fp.head),
+      ...fp.hands.map(x => h('span', { class: 'cy-line' }, x.text)),
+      h('span', { class: 'cy-line muted' }, `Worked out from your ${fmt(fp.from.date)} peaks (left ${kg(fp.from.left)}, right ${kg(fp.from.right)} kg). A new test changes these.`),
+      w.finger.note ? h('span', { class: 'cy-line' }, w.finger.note) : null));
+  }
+  for (const key of ['Board', 'Pull', 'Weakness']) {
+    const txt = w.sessions && w.sessions[key];
+    if (!txt) continue;
+    const open = data.workouts && data.workouts[key] && key !== 'Board';
+    sess.append(h('li', open ? { class: 'tap', role: 'button', tabindex: '0', 'aria-label': `${key}: ${txt} Open the workout`,
+      onclick: () => go('plan', true, key, 'cycle'),
+      onkeydown: e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go('plan', true, key, 'cycle'); } } } : {},
+      h('b', {}, key), h('span', { class: 'cy-main' }, txt), open ? h('span', { class: 'cy-line open' }, 'Open the workout') : null));
+  }
+  if (w.tests) for (const t of w.tests) sess.append(h('li', {}, h('span', { class: 'cy-main' }, t)));
+  sec.append(sess);
+  if (w.scale && w.scale !== 1) sec.append(h('p', { class: 'sub' }, 'Deload: the sets of every Pull and Weakness exercise are cut to about half unless this week sets its own number.'));
+  root.append(sec);
+
+  // goals
+  const goals = h('section', { class: 'section' }, h('h2', {}, 'Goals'),
+    h('p', { class: 'sub' }, 'Worked out from the tests, sets and sends you log. Start is where you began on the cycle’s first day.'));
+  for (const g of c.goals || []) goals.append(goalCard(data, c, g, today));
+  root.append(goals);
+
+  root.append(h('details', { class: 'fold' }, h('summary', {}, 'How the cycle works'),
+    h('div', { class: 'cy-how' },
+      h('p', {}, c.intro),
+      h('p', {}, 'Finger loads are a percentage of your latest 20mm Tindeq peak. The percentages come from common practice, not from a trial, so treat them as a starting point and drop them if the hangs feel bad.'),
+      h('p', {}, 'Weights in Pull and Weakness go up only if the last session was clean. If a number looks wrong, Edit this exercise changes the usual numbers, and the cycle week sets this week’s.'),
+      h('p', {}, 'The one-arm pull-up itself is a longer goal than one cycle. The pull-up weight and lock-off hold are the steps toward it.'))));
+  return root;
+}
+
 /* ---------- Workouts ---------- */
 const fmtClock = sec => { const s = Math.max(0, Math.ceil(sec)); return `${Math.floor(s / 60)}:${pad(s % 60)}`; };
 const unitText = (n, u) => `${n} ${u}${n === 1 ? '' : 's'}`;
@@ -1019,6 +1271,7 @@ function exerciseBody(key, e, parent, part) {
     ? h('p', { class: 'dose' }, dose)
     : h('p', { class: 'dose unset' }, 'Sets and reps not set yet'));
   if (e.load || e.needsLoad) out.push(h('p', { class: 'load' }, 'Weight: ', e.load ? h('b', {}, e.load) : 'not set yet'));
+  if (e.cycleNote) out.push(h('p', { class: 'cyc' }, h('b', {}, `Week ${e.cycleWeek}: `), e.cycleNote));
   if (e.how) out.push(h('p', { class: 'how' }, e.how));
   if (e.sets) {
     const count = h('p', { class: 'ex-count', 'aria-live': 'polite' });
@@ -1054,7 +1307,7 @@ function exerciseBody(key, e, parent, part) {
     out.push(row);
   }
   if (part) out.push(part);
-  out.push(h('button', { type: 'button', class: 'btn quiet ex-edit', onclick: () => Log.exerciseSheet(parent ? { workout: key, exercise: parent, variant: e } : { workout: key, exercise: e }) }, 'Edit this exercise'));
+  out.push(h('button', { type: 'button', class: 'btn quiet ex-edit', onclick: () => Log.exerciseSheet(parent ? { workout: key, exercise: parent, variant: e._base || e } : { workout: key, exercise: e._base || e }) }, 'Edit this exercise'));
   return out;
 }
 
@@ -1081,14 +1334,14 @@ function exerciseCard(key, e, n) {
   const fin = !ticks && isFinished(state.today, e);
   const li = h('li', { class: fin ? 'ex finished' : 'ex' });
   li.append(h('div', { class: 'ex-head' }, h('span', { class: 'ex-n', 'aria-hidden': 'true' }, fin ? '✓' : String(n)), h('h3', {}, e.name, fin ? h('span', { class: 'sr' }, ' (done today)') : null)));
-  if (!e.variants) { li.append(...exerciseBody(key, e, null, ticks ? partControl(key, e, () => null) : finishControl(e))); return li; }
+  if (!e.variants) { const ec = withCycle(key, e); li.append(...exerciseBody(key, ec, null, ticks ? partControl(key, e, () => null) : finishControl(ec))); return li; }
   const last = lastVariant(key, e);
   const body = h('div', { class: 'variant-body' });
   const row = h('div', { class: 'chips', role: 'radiogroup', 'aria-label': 'Choose one for today' });
   let cur = chosenVariant(key, e);
   const draw = () => {
     row.querySelectorAll('button').forEach(b => b.setAttribute('aria-checked', String(b.dataset.v === cur.id)));
-    body.replaceChildren(...exerciseBody(key, cur, e, ticks ? partControl(key, e, () => cur.name) : null));
+    body.replaceChildren(...exerciseBody(key, withCycle(key, cur), e, ticks ? partControl(key, e, () => cur.name) : null));
   };
   for (const v of e.variants) row.append(h('button', { type: 'button', role: 'radio', 'data-v': v.id, onclick: () => { cur = v; store(variantKey(e), v.id); draw(); } }, v.name));
   if (last) li.append(h('p', { class: 'how', style: 'margin-top:8px' }, `Last time: ${last.v.name}, ${fmt(last.date)}.`));
@@ -1097,13 +1350,21 @@ function exerciseCard(key, e, n) {
   return li;
 }
 
+function cycleLine(key) {
+  const info = cycleInfo(state.data, state.today);
+  if (!info || info.kind !== 'active' || !TRAIN.includes(key)) return null;
+  const w = info.week, scaled = w.scale && w.scale !== 1;
+  return h('p', { class: 'cyc-line' }, h('b', {}, `${weekLabel(info.c, w)}, ${w.phase}. `),
+    scaled ? 'Sets are cut to about half this week.' : 'This week’s sets and weights come from the cycle.');
+}
+
 function renderWorkout(key) {
   const { data, today } = state;
   const w = data.workouts[key];
   const root = h('div');
-  const backTo = state.back === 'today' ? 'today' : 'plan';
+  const backTo = state.back === 'today' ? 'today' : state.back === 'cycle' ? 'cycle' : 'plan';
   root.append(h('button', { type: 'button', class: 'back', onclick: () => go(backTo, true) },
-    s('svg', { viewBox: '0 0 24 24', width: 20, height: 20, 'aria-hidden': 'true' }, s('path', { d: 'M15 5l-7 7 7 7', fill: 'none', stroke: 'currentColor', 'stroke-width': 2.4, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' })), backTo === 'today' ? 'Today' : 'Plan'));
+    s('svg', { viewBox: '0 0 24 24', width: 20, height: 20, 'aria-hidden': 'true' }, s('path', { d: 'M15 5l-7 7 7 7', fill: 'none', stroke: 'currentColor', 'stroke-width': 2.4, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' })), backTo === 'today' ? 'Today' : backTo === 'cycle' ? 'Cycle' : 'Plan'));
   const pr = partsFor(data, key, today);
   let todayLine = null;
   if (!TRAIN.includes(key)) {
@@ -1116,6 +1377,7 @@ function renderWorkout(key) {
       wk ? h('p', { class: 'sub', style: 'margin-top:4px' }, `This week: ${wk.count7} of ${wk.target} ${key.toLowerCase()} sessions logged.`) : null);
   }
   root.append(h('section', { class: 'section tight' }, h('h2', {}, w.title), w.intro ? h('p', { class: 'sub' }, w.intro) : null, todayLine,
+    cycleLine(key),
     pr && pr.done ? h('p', { class: 'progress' }, `This week: ${pr.done} of ${pr.total} exercises ticked off.` + (pr.done === pr.total ? ` That counts as a full ${key} session for the week.` : '')) : null));
   const list = h('ol', { class: 'workout' });
   w.exercises.forEach((e, i) => list.append(exerciseCard(key, e, i + 1)));
@@ -1128,7 +1390,7 @@ function renderWorkout(key) {
 }
 
 /* ---------- shell ---------- */
-const VIEWS = { today: renderToday, strength: renderStrength, climbs: renderClimbs, plan: renderPlan };
+const VIEWS = { today: renderToday, strength: renderStrength, climbs: renderClimbs, cycle: renderCycle, plan: renderPlan };
 const view = document.getElementById('view');
 
 function renderHeader() {
@@ -1142,6 +1404,7 @@ function mount() {
 }
 function go(tab, fresh, sub, from) {
   state.back = from || null;
+  if (fresh && tab === 'cycle') cycleSel = null;
   state.tab = VIEWS[tab] ? tab : 'today';
   state.sub = state.tab === 'plan' && sub && state.data.workouts && state.data.workouts[sub] ? sub : null;
   document.querySelectorAll('.tabs button').forEach(b => {

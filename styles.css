@@ -196,7 +196,7 @@ details.fold > summary { cursor: pointer; font-size: 20px; font-weight: 700; let
 .tip-install b { font-weight: 700; }
 
 /* bottom tabs */
-.tabs { position: fixed; inset: auto 0 0 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); padding: 6px 8px calc(6px + env(safe-area-inset-bottom)); background: color-mix(in srgb, var(--page) 88%, transparent); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); border-top: 1px solid var(--grid); }
+.tabs { position: fixed; inset: auto 0 0 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); padding: 6px 8px calc(6px + env(safe-area-inset-bottom)); background: color-mix(in srgb, var(--page) 88%, transparent); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); border-top: 1px solid var(--grid); }
 .tabs button { display: flex; flex-direction: column; align-items: center; gap: 2px; min-height: 52px; padding: 6px 0 4px; border: 0; background: transparent; color: var(--muted); font-size: 11.5px; font-weight: 600; cursor: pointer; }
 .tabs svg { width: 25px; height: 25px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .tabs svg .fill { fill: currentColor; stroke: none; }
@@ -361,3 +361,52 @@ details.fold.how > summary { font-size: 16px; min-height: 40px; }
 .setchart { margin-top: 12px; }
 .setchart .sub { margin-top: 12px; font-size: 13px; color: var(--ink-2); }
 .setchart .chart { margin-top: 6px; }
+
+/* ---------- cycle ---------- */
+.cy-card { margin-top: 18px; cursor: pointer; }
+.cy-card:active { background: var(--wash); }
+.cy-card .kicker { font-size: 13px; }
+.cy-card h3 { margin-top: 4px; }
+.cy-card .sub { margin-top: 4px; font-size: 14px; }
+.cy-mini { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 4px; margin-top: 12px; }
+.cy-mini i { height: 8px; border-radius: 4px; border: 1.5px solid var(--axis); }
+.cy-mini i.past { background: var(--track); border-color: var(--track); }
+.cy-mini i.now { background: var(--ink); border-color: var(--ink); }
+.cy-mini i.deload { border-style: dashed; }
+.cy-strip { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 4px; margin-top: 16px; }
+.wk { min-height: 44px; min-width: 0; padding: 0; border-radius: 10px; border: 1.5px solid var(--axis); background: transparent; color: var(--ink-2); font-size: 15px; font-weight: 700; cursor: pointer; }
+.wk.past { background: var(--track); border-color: var(--track); color: var(--ink); }
+.wk.now { background: var(--ink); border-color: var(--ink); color: var(--surface); }
+.wk.deload { border-style: dashed; }
+.wk[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--page), 0 0 0 4px var(--s1); }
+.wk-legend { margin-top: 8px; }
+.cy-aim { margin-top: 12px; font-size: 17px; line-height: 1.4; }
+.cy-back { margin-top: 10px; }
+.cy-sess { margin-top: 14px; border-top: 1px solid var(--grid); }
+.cy-sess li { display: flex; flex-direction: column; gap: 3px; padding: 13px 0; border-bottom: 1px solid var(--grid); }
+.cy-sess li.tap { cursor: pointer; }
+.cy-sess li.tap:active { background: var(--wash); }
+.cy-sess b { font-size: 17px; font-weight: 700; }
+.cy-main { font-size: 15px; }
+.cy-line { font-size: 14px; color: var(--ink-2); }
+.cy-line.muted { font-size: 13px; color: var(--muted); }
+.cy-line.open { font-weight: 650; color: var(--ink); }
+.goal { margin-top: 14px; }
+.gbar { margin-top: 14px; }
+.gbar .row { display: flex; justify-content: space-between; gap: 12px; font-size: 15px; }
+.gbar .row b { font-weight: 700; }
+.gbar .meter { margin: 8px 0 6px; }
+.gbar .sub { margin-top: 2px; }
+.meter .fill.ink { background: var(--ink); }
+.bench { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--grid); }
+.bench-t { display: flex; flex-direction: column; gap: 2px; min-width: 0; font-size: 14px; }
+.bench-t b { font-weight: 650; }
+.bench-t span { color: var(--ink-2); font-size: 13px; }
+.goal .gnote { margin-top: 12px; }
+details.why { margin-top: 12px; }
+details.why > summary { cursor: pointer; font-size: 14px; font-weight: 650; min-height: 36px; display: flex; align-items: center; color: var(--ink-2); }
+details.why > p { font-size: 14px; color: var(--ink-2); max-width: 60ch; }
+.cy-how p { margin-top: 10px; font-size: 15px; max-width: 60ch; }
+.cyc { margin-top: 10px; padding: 10px 12px; border-radius: 12px; background: var(--wash); font-size: 14px; }
+.cyc-line { margin-top: 8px; font-size: 14px; color: var(--ink-2); }
+.cyc-line b { color: var(--ink); }

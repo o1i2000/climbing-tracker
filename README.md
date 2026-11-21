@@ -98,3 +98,13 @@ screen width (`min(52px, (100vw - 96px) / 5.7)`), so a long day name such as Wea
 past the edge. The sheets clip sideways overflow, and the date field drops the iPhone Safari native width so it follows
 the sheet. Check by opening Log a session at 320, 375 and 390 px wide with a wide font and confirming the page and the
 sheet have the same scroll width as the screen.
+
+## Training cycle (Cycle tab)
+`data.cycle` turns the plan into a fixed block: `start` is a Monday, and each entry in `weeks` is seven days. Cycle 1 runs weeks 1 to 4 (Build), 5 (Deload), 6 and 7 (Intensify) and 8 (Benchmarks). When the cycle ends, add a new `cycle` object (or edit `start` and `weeks`) and the whole app follows.
+
+- A week has `phase`, `title`, `aim`, `sessions` (Board, Pull and Weakness text) and optionally `finger` `{ pct, hangs, seconds, rest, note }`, `scale` and `rx`.
+- `finger.pct` is a percentage of the latest 20mm Tindeq peak. The Cycle tab works out each hand's pull and the help needed from `athlete.bodyweight`, left hand first. A new test changes the numbers.
+- `rx` maps an exercise id to this week's `sets`, `reps`, `load`, `hold` and a `note`. In Pull and Weakness the workout shows those instead of the usual numbers, with the note under the dose. Edit this exercise still changes the usual numbers (`workouts`), not the cycle's.
+- `scale` (the deload uses 0.5) halves the sets of every Pull and Weakness exercise that has no `rx.sets` of its own.
+- `goals[]` each have a `metric`: `peak` (best 20mm test since the start vs `target.right`/`target.left`), `pullup` (heaviest `p-pullups` set at `target.reps` or more), `pinch` (best Pinch block test, baseline is the first test in the first 14 days if there is one, target is `targetPct` above it), `sloper` (heaviest `w-sloper` load), `list` (sent count in `list`) and `bench` (a send logged for the benchmark). Progress is read from what is logged, so nothing is entered twice.
+- `benchmarks[]` are results typed in by hand (hold times in seconds, or the name of a climb). Each result is a row in `benchLog` (`id`, `date`, `bench`, `value`, `note`), added with the `addBench` op and removed with `deleteBench`.

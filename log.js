@@ -83,6 +83,11 @@ function applyOp(d, op) {
   } else if (op.op === 'deleteClimb') {
     const l = d.lists.find(x => x.id === op.list);
     if (l) l.climbs = l.climbs.filter(c => c.name !== op.name);
+  } else if (op.op === 'addBench') {
+    d.benchLog = d.benchLog || [];
+    if (!d.benchLog.some(x => x.id === op.id)) d.benchLog.push({ ...op.entry, id: op.id });
+  } else if (op.op === 'deleteBench') {
+    d.benchLog = (d.benchLog || []).filter(x => x.id !== op.target);
   }
   if (op.at && op.at > (d.updated || '')) d.updated = op.at;
   return d;
@@ -100,6 +105,8 @@ const describe = op => ({
   deletePart: () => 'undo a tick',
   addSetLog: () => `log a set of ${op.entry.name}`,
   deleteSetLog: () => 'remove a logged set',
+  addBench: () => 'log a benchmark result',
+  deleteBench: () => 'remove a benchmark result',
 }[op.op] || (() => op.op))();
 
 /* ---------- data held on this phone ---------- */
@@ -505,6 +512,45 @@ function importResult(res, close) {
   return bits;
 }
 
+/* ---------- Benchmark results (data.cycle.benchmarks, saved in data.benchLog) ---------- */
+function benchSheet({ bench, today }) {
+  const numeric = bench.unit === 's';
+  sheet(bench.name, close => {
+    const date = h('input', { type: 'date', value: today });
+    const value = numeric ? h('input', { type: 'number', min: '0', max: '600', step: '0.5', inputmode: 'decimal', placeholder: 'seconds' }) : null;
+    const note = h('input', { type: 'text', maxlength: '80', autocomplete: 'off', placeholder: numeric ? 'Optional' : 'Name of the climb' });
+    const err = errBox();
+    const mine = (current().benchLog || []).filter(x => x.bench === bench.id).sort((a, b) => b.date.localeCompare(a.date));
+    const root = h('div', {},
+      bench.how ? h('p', { class: 'f-h', style: 'margin-top:0' }, bench.how) : null,
+      field('Date', date),
+      numeric ? field('Longest hold (seconds)', value) : null,
+      field(numeric ? 'Note' : 'Climb', note),
+      err, saveNote(),
+      h('div', { class: 'sheet-actions' }, h('button', { type: 'button', class: 'btn primary block', onclick: () => {
+        if (!date.value) return showErr(err, 'Pick a date.');
+        let v = null;
+        if (numeric) {
+          v = parseFloat(value.value);
+          if (!isFinite(v) || v < 0 || v > 600) return showErr(err, 'Enter the hold in seconds, from 0 to 600.');
+        } else if (!note.value.trim()) return showErr(err, 'Enter the name of the climb.');
+        close();
+        submit([{ id: uid(), op: 'addBench', at: isoToday(), entry: { date: date.value, bench: bench.id, value: v, note: note.value.trim() } }]);
+      } }, 'Save this result')));
+    if (mine.length) {
+      const list = h('ul', { class: 'recent' });
+      for (const x of mine.slice(0, 5)) {
+        list.append(h('li', {},
+          h('span', { class: 'rt' }, fmtLong(x.date) + (x.value != null ? `: ${one(x.value)} s` : '')),
+          x.note ? h('span', { class: 'rm' }, x.note) : null,
+          confirmButton('Remove', 'Tap again to remove', () => { close(); submit([{ id: uid(), op: 'deleteBench', at: isoToday(), target: x.id }]); })));
+      }
+      root.append(h('h3', { class: 'sheet-sub' }, 'Logged so far'), list);
+    }
+    return root;
+  });
+}
+
 /* ---------- Climbs ---------- */
 function climbSheet({ list, climb, today }) {
   sheet(climb.name, close => {
@@ -628,7 +674,7 @@ const api = {
   resolve, current, submit, flush, init,
   pendingCount: () => pending().length,
   hasToken: () => !!ls.get(KEY.token),
-  sessionSheet, testSheet, climbSheet, addClimbSheet, exerciseSheet, settingsCard, confirmButton, toast,
+  sessionSheet, testSheet, benchSheet, climbSheet, addClimbSheet, exerciseSheet, settingsCard, confirmButton, toast,
   _parseTindeq: parseTindeq, _applyOp: applyOp,
 };
 api.uid = uid;
