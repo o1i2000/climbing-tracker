@@ -537,7 +537,7 @@
   "plan": [
     {
       "session": "Finger",
-      "what": "20mm half-crimp hangs at a percentage of your Tindeq peak, set each week by the cycle (see Cycle). Left hand first, then one-arm progressions as the weeks get heavier.",
+      "what": "Tindeq repeaters on the 20mm at home (or one-arm hangs on the gym pulley when you can), then one max pull on each hand. The Cycle tab sets the level each week.",
       "load": "Fingers: high",
       "spacing": "At least 2 days from Board; same day as Pull"
     },
@@ -555,7 +555,7 @@
     },
     {
       "session": "Weakness",
-      "what": "Gym strengthening for your weak spots: pinch block lifts, heel hook floor raises, ring face pulls, open hand drag, shoulder Y's to I's and sloper rollers. The cycle sets the sets and weights each week.",
+      "what": "Gym strengthening for your weak spots: heel hook floor raises, ring face pulls, open hand drag, shoulder Y's to I's, plus pinch block lifts and sloper rollers when you have the kit. The cycle sets the sets each week.",
       "load": "Low",
       "spacing": "Light day: best the day after a heavy session"
     },
@@ -599,7 +599,7 @@
     },
     {
       "title": "Cycle",
-      "text": "Seven weeks plus a benchmark week: four build weeks, a deload, two intensify weeks, then retests. Finger loads are a percentage of your latest Tindeq peak, so a new test changes next week's numbers. The deload halves the sets in Pull and Weakness."
+      "text": "Seven weeks plus a benchmark week: four build weeks, a deload, two intensify weeks, then retests. Finger targets are a percentage of the highest of your last three 20mm tests, so a new max pull changes next week's numbers. The deload halves the sets in Finger, Pull and Weakness."
     },
     {
       "title": "Weaker hand",
@@ -638,7 +638,7 @@
       "text": "Rotator cuff rows and I Y T (Pull day) plus face pulls and Y's to I's (Weakness day) add up to about 18 sets of cuff and rear-delt work. Keep them on different days. The app warns you if you tick or log both on the same day."
     }
   ],
-  "rev": 41,
+  "rev": 42,
   "workouts": {
     "Weakness": {
       "title": "Weakness session",
@@ -653,7 +653,8 @@
           "load": null,
           "how": "One hand at a time, with the weight you have set.",
           "timers": [],
-          "needsLoad": true
+          "needsLoad": true,
+          "optional": true
         },
         {
           "id": "w-heel",
@@ -729,7 +730,8 @@
           "how": "Weighted roller on a rope. Spin it both ways so you train open grip and closed grip.",
           "timers": [],
           "needsLoad": false,
-          "track": true
+          "track": true,
+          "optional": true
         }
       ]
     },
@@ -885,6 +887,55 @@
           "how": "Stand with your feet wide and toes turned out a little. Shift onto one leg and sit down into a deep squat on that side, keeping the other leg straight with the heel down and toes up. Push back up and shift to the other side. Hold a weight at your chest for extra load.",
           "timers": [],
           "needsLoad": true
+        }
+      ]
+    },
+    "Finger": {
+      "title": "Finger session",
+      "intro": "Pick home or gym, then finish with one max pull. Logging this does not tick Pull.",
+      "exercises": [
+        {
+          "id": "f-main",
+          "name": "Finger work: pick one",
+          "variants": [
+            {
+              "id": "f-rep",
+              "name": "Repeaters at home (Tindeq)",
+              "sets": 4,
+              "reps": "5 × 4 s on, 4 s off",
+              "unit": "set",
+              "load": null,
+              "how": "At home, both hands at once on the 20mm edges with the Tindeq. 200 s between sets.",
+              "timers": []
+            },
+            {
+              "id": "f-oah",
+              "name": "One-arm hangs at the gym (pulley)",
+              "sets": 6,
+              "reps": "3 per hand",
+              "unit": "set",
+              "load": null,
+              "how": "At the gym when you can. Use the pulley to take weight off until you can hold the 20mm for about 7 s. Left hand first.",
+              "timers": [],
+              "track": true,
+              "hands": [
+                "Left",
+                "Right"
+              ],
+              "loadLabel": "Help from the pulley (kg)"
+            }
+          ]
+        },
+        {
+          "id": "f-max",
+          "name": "One max pull",
+          "sets": 1,
+          "reps": "each hand",
+          "unit": "set",
+          "load": null,
+          "how": "Last thing in the session, once you have recovered from the work: one all-out pull on each hand, 20mm half crimp. Save it as a test and next week's targets update.",
+          "timers": [],
+          "action": "tindeq-test"
         }
       ]
     }
@@ -1055,7 +1106,7 @@
     "name": "Cycle 1",
     "focus": "One-arm hang on the 20mm",
     "start": "2026-11-23",
-    "intro": "Seven weeks, then a benchmark week. Weeks 1 to 4 build, week 5 is a deload, weeks 6 and 7 push hardest, and week 8 repeats the tests from the start. The finger work leads; pull, pinch and sloper work is set to keep improving without competing with it.",
+    "intro": "Seven weeks, then a benchmark week. Weeks 1 to 4 build, week 5 is a deload, weeks 6 and 7 push hardest, and week 8 repeats the tests from the start. The finger work leads: Tindeq repeaters at home (one-arm hangs on a pulley when you can get to the gym), then one max pull. Pull work continues alongside. Pinch and sloper goals start once you have the kit.",
     "phases": {
       "Build": "Steady progression. Controlled hangs, clean reps, and weights that go up only when the last session was clean.",
       "Deload": "About half the sets, lighter weights and no hard tries. Fingers and shoulders catch up, so the next block is stronger.",
@@ -1068,17 +1119,10 @@
         "phase": "Build",
         "title": "Baseline and settle in",
         "aim": "Get the starting numbers down and learn the loads. Everything should feel controlled.",
-        "finger": {
-          "pct": 85,
-          "hangs": 5,
-          "seconds": 10,
-          "rest": 180,
-          "note": "Left hand first in every hang. Note how many hangs feel solid, not the last one that scraped through."
-        },
         "sessions": {
           "Board": "Pick 2 or 3 Tension 7b+ candidates for the benchmark and give each a go. On Tension 1, work the 7a and 7a+ climbs. Log the tries.",
           "Pull": "Weighted pullups, then rotator cuff rows and I Y T. Record a one-arm lock-off hold on each side as a baseline.",
-          "Weakness": "Retest the one-hand pinch block max in the Tindeq app (the last one is from Jun 2025). Pinch lifts: pick a weight you can lift for 5 clean reps each hand."
+          "Weakness": "Heel hook raises, ring face pulls, open hand drag and Y's to I's. Pinch lifts and sloper rollers wait until you have the kit. Do the timed sloper hang once as a baseline."
         },
         "rx": {
           "p-pullups": {
@@ -1087,33 +1131,30 @@
             "load": "25kg",
             "note": "Same as your last session. Only add weight once every rep of every set lands."
           },
-          "w-sloper": {
-            "sets": 5,
-            "load": "25kg",
-            "note": "Same as now. Spin both ways."
+          "f-rep": {
+            "pct": 82.5,
+            "sets": 4,
+            "reps": "5 × 4 s on, 4 s off",
+            "note": "Each hand at {pct}% of your peak: left {left} kg, right {right} kg. 200 s between sets. Your average will sit a little under the line; the peaks should reach it. A step down from 20 Nov so you can learn the loads."
           },
-          "w-pinch": {
-            "sets": 5,
-            "note": "Find your 5-rep weight this week. Write it down; it is the number to beat."
+          "f-oah": {
+            "pct": 85,
+            "sets": 6,
+            "reps": "3 per hand",
+            "note": "Take off about {leftHelp} on the left and {rightHelp} on the right to hang at {pct}% of your peak. Left hand first, around 7 s a hang."
           }
-        }
+        },
+        "fingerNote": "Finish with one max pull on each hand, left first. It sets next week's targets."
       },
       {
         "n": 2,
         "phase": "Build",
         "title": "Add a hang",
         "aim": "Same weight on the fingers, one more hang. The pull-ups go up by a plate step if last week was clean.",
-        "finger": {
-          "pct": 85,
-          "hangs": 6,
-          "seconds": 10,
-          "rest": 180,
-          "note": "Left hand first in every hang."
-        },
         "sessions": {
           "Board": "Tension 1: the 7a+ climbs. Keep one try on a 7b+ candidate at the end if your skin is good.",
           "Pull": "Weighted pullups: +2.5 kg if every rep landed last week. Then rotator cuff rows and I Y T.",
-          "Weakness": "Pinch lifts: +1 kg if all 5 reps landed on both hands. Sloper rollers as set."
+          "Weakness": "Heel hook raises, ring face pulls, open hand drag and Y's to I's. Pinch lifts and sloper rollers if you have the kit."
         },
         "rx": {
           "p-pullups": {
@@ -1122,32 +1163,30 @@
             "load": "27.5kg",
             "note": "Add 2.5 kg only if last week was clean. Otherwise stay at the same weight."
           },
-          "w-sloper": {
-            "sets": 5,
-            "load": "25kg"
+          "f-rep": {
+            "pct": 85,
+            "sets": 4,
+            "reps": "5 × 4 s on, 4 s off",
+            "note": "Each hand at {pct}% of your peak: left {left} kg, right {right} kg. 200 s between sets. Your average will sit a little under the line; the peaks should reach it. The same level as 20 Nov."
           },
-          "w-pinch": {
-            "sets": 5,
-            "note": "Add 1 kg if all 5 landed on both hands."
+          "f-oah": {
+            "pct": 85,
+            "sets": 6,
+            "reps": "3 per hand",
+            "note": "Take off about {leftHelp} on the left and {rightHelp} on the right to hang at {pct}% of your peak. Left hand first, around 7 s a hang."
           }
-        }
+        },
+        "fingerNote": "Finish with one max pull on each hand, left first."
       },
       {
         "n": 3,
         "phase": "Build",
         "title": "Heavier fingers",
         "aim": "Fingers go up to about 90% of your peak. Pull-ups get heavier for fewer reps.",
-        "finger": {
-          "pct": 90,
-          "hangs": 6,
-          "seconds": 10,
-          "rest": 180,
-          "note": "Left hand first in every hang. Stop the set early if a hang feels like a grind; a clean 5 beats a ragged 6."
-        },
         "sessions": {
           "Board": "Tension 1: finish off the 7a+ climbs and look at the 7b ones. Log the tries.",
           "Pull": "Weighted pullups, 4 sets of 4. Then rotator cuff rows and I Y T.",
-          "Weakness": "Pinch lifts and sloper rollers go up a notch. This week's weights are on each exercise."
+          "Weakness": "Same as week 2."
         },
         "rx": {
           "p-pullups": {
@@ -1156,33 +1195,30 @@
             "load": "30kg",
             "note": "4 reps now. Same rule: add weight only if the last session was clean."
           },
-          "w-sloper": {
-            "sets": 5,
-            "load": "27.5kg",
-            "note": "Up 2.5 kg from the first two weeks."
+          "f-rep": {
+            "pct": 87.5,
+            "sets": 4,
+            "reps": "5 × 4 s on, 4 s off",
+            "note": "Each hand at {pct}% of your peak: left {left} kg, right {right} kg. 200 s between sets. Your average will sit a little under the line; the peaks should reach it."
           },
-          "w-pinch": {
-            "sets": 5,
-            "note": "Add 1 kg if all 5 landed."
+          "f-oah": {
+            "pct": 90,
+            "sets": 6,
+            "reps": "3 per hand",
+            "note": "Take off about {leftHelp} on the left and {rightHelp} on the right to hang at {pct}% of your peak. Left hand first, around 7 s a hang."
           }
-        }
+        },
+        "fingerNote": "Finish with one max pull on each hand, left first. Targets are now 87.5% for repeaters."
       },
       {
         "n": 4,
         "phase": "Build",
         "title": "Peak of the first block",
         "aim": "The hardest finger week before the deload. Finish it fresh enough to enjoy the rest week.",
-        "finger": {
-          "pct": 90,
-          "hangs": 6,
-          "seconds": 10,
-          "rest": 180,
-          "note": "Left hand first in every hang. This is the last heavy week before the deload, so leave one rep in the tank."
-        },
         "sessions": {
           "Board": "Tension 1: aim for the 7b climbs. Cap yourself at 8 hard tries; skin and fingers are the limit.",
           "Pull": "Weighted pullups, 4 sets of 4, heavier again. Then rotator cuff rows and I Y T.",
-          "Weakness": "Pinch lifts and sloper rollers at the same weights as last week, a bit more crisp."
+          "Weakness": "Same as week 2, a bit more crisp."
         },
         "rx": {
           "p-pullups": {
@@ -1191,32 +1227,30 @@
             "load": "32.5kg",
             "note": "The heaviest 4s of the cycle so far."
           },
-          "w-sloper": {
-            "sets": 5,
-            "load": "27.5kg"
+          "f-rep": {
+            "pct": 87.5,
+            "sets": 4,
+            "reps": "5 × 4 s on, 4 s off",
+            "note": "Each hand at {pct}% of your peak: left {left} kg, right {right} kg. 200 s between sets. Your average will sit a little under the line; the peaks should reach it. Leave a rep in the tank; the deload follows."
           },
-          "w-pinch": {
-            "sets": 5,
-            "note": "Same weight as last week unless it felt easy."
+          "f-oah": {
+            "pct": 90,
+            "sets": 6,
+            "reps": "3 per hand",
+            "note": "Take off about {leftHelp} on the left and {rightHelp} on the right to hang at {pct}% of your peak. Left hand first, around 7 s a hang."
           }
-        }
+        },
+        "fingerNote": "Finish with one max pull on each hand. Leave one rep in the tank; the deload follows."
       },
       {
         "n": 5,
         "phase": "Deload",
         "title": "Deload",
         "aim": "Back off to let the fingers and shoulders catch up. Sets are cut to about half and nothing goes near failure.",
-        "finger": {
-          "pct": 80,
-          "hangs": 3,
-          "seconds": 10,
-          "rest": 180,
-          "note": "Left hand first in every hang. Easy hangs. If you are sore or tired, skip the Finger session; resting is the point."
-        },
         "sessions": {
           "Board": "Easy climbing only: Tension climbs well under your limit, no projecting, nothing that hurts the skin.",
           "Pull": "Weighted pullups, 2 light sets. Then rotator cuff rows and I Y T, half the sets.",
-          "Weakness": "Half the sets of everything, at lighter weights than week 4."
+          "Weakness": "Half the sets of everything, lighter weights than week 4."
         },
         "scale": 0.5,
         "rx": {
@@ -1226,33 +1260,30 @@
             "load": "25kg",
             "note": "Light. Back off the weight for the deload."
           },
-          "w-sloper": {
-            "sets": 3,
-            "load": "22.5kg",
-            "note": "Light. 3 sets only."
+          "f-rep": {
+            "pct": 75,
+            "sets": 2,
+            "reps": "5 × 4 s on, 4 s off",
+            "note": "Each hand at {pct}% of your peak: left {left} kg, right {right} kg. 200 s between sets. Your average will sit a little under the line; the peaks should reach it. Deload: half the sets, lighter."
           },
-          "w-pinch": {
-            "sets": 3,
-            "note": "Keep the weight from week 4 or drop 1 kg; just 3 sets."
+          "f-oah": {
+            "pct": 80,
+            "sets": 4,
+            "reps": "2 per hand",
+            "note": "Take off about {leftHelp} on the left and {rightHelp} on the right to hang at {pct}% of your peak. Left hand first, around 7 s a hang. Deload: easy hangs only."
           }
-        }
+        },
+        "fingerNote": "Easy week. One max pull at the end only if you feel fresh; otherwise skip it."
       },
       {
         "n": 6,
         "phase": "Intensify",
         "title": "Fewer, heavier hangs",
         "aim": "Fresh from the deload, so the fingers are ready for heavier loads in fewer hangs.",
-        "finger": {
-          "pct": 92,
-          "hangs": 4,
-          "seconds": 10,
-          "rest": 240,
-          "note": "Left hand first in every hang. Four hangs with a longer rest. Stop the session if your hand shape changes or your form goes."
-        },
         "sessions": {
           "Board": "Tension 1: 7b climbs and the 7b+ candidates. Keep tries limited and rested.",
           "Pull": "Weighted pullups, 4 sets of 3 and heavy. Then rotator cuff rows and I Y T.",
-          "Weakness": "Pinch lifts and sloper rollers to new top weights."
+          "Weakness": "Same exercises as week 2. Pinch lifts and sloper rollers if you have the kit."
         },
         "rx": {
           "p-pullups": {
@@ -1261,33 +1292,30 @@
             "load": "35kg",
             "note": "Heavy 3s. Add weight only if every rep of last time landed."
           },
-          "w-sloper": {
-            "sets": 5,
-            "load": "30kg",
-            "note": "The target weight. If it does not move, repeat last week's weight."
+          "f-rep": {
+            "pct": 90,
+            "sets": 4,
+            "reps": "3 × 4 s on, 4 s off",
+            "note": "Each hand at {pct}% of your peak: left {left} kg, right {right} kg. 240 s between sets. Your average will sit a little under the line; the peaks should reach it. Fewer reps, heavier."
           },
-          "w-pinch": {
-            "sets": 5,
-            "note": "Add 1 kg if the last session was clean."
+          "f-oah": {
+            "pct": 92,
+            "sets": 6,
+            "reps": "3 per hand",
+            "note": "Take off about {leftHelp} on the left and {rightHelp} on the right to hang at {pct}% of your peak. Left hand first, around 7 s a hang."
           }
-        }
+        },
+        "fingerNote": "Repeaters change shape: 3 reps, heavier, longer rest. Finish with one max pull on each hand."
       },
       {
         "n": 7,
         "phase": "Intensify",
         "title": "Peak and one-arm attempts",
         "aim": "The final push. Heaviest hangs and your first proper one-arm hang attempts, rested and warm.",
-        "finger": {
-          "pct": 95,
-          "hangs": 3,
-          "seconds": 8,
-          "rest": 240,
-          "note": "Left hand first in every hang. After the hangs, try a few one-arm hangs on the right with as little help as you can manage. Stop at the first rep that fails."
-        },
         "sessions": {
           "Board": "Tension 1: finish the list if you can. Rest well before the benchmark week.",
           "Pull": "Weighted pullups, 4 sets of 3. Then rotator cuff rows and I Y T.",
-          "Weakness": "Pinch lifts and sloper rollers: top weights, no extra sets."
+          "Weakness": "Same as week 6. No extra sets."
         },
         "rx": {
           "p-pullups": {
@@ -1296,15 +1324,20 @@
             "load": "37.5kg",
             "note": "The last heavy week. Skip the weight jump if the last session was not clean."
           },
-          "w-sloper": {
-            "sets": 5,
-            "load": "30kg"
+          "f-rep": {
+            "pct": 92.5,
+            "sets": 4,
+            "reps": "3 × 4 s on, 4 s off",
+            "note": "Each hand at {pct}% of your peak: left {left} kg, right {right} kg. 240 s between sets. Your average will sit a little under the line; the peaks should reach it. Fewer reps, heaviest of the cycle."
           },
-          "w-pinch": {
-            "sets": 5,
-            "note": "Same weight as last week unless it felt easy."
+          "f-oah": {
+            "pct": 95,
+            "sets": 4,
+            "reps": "2 per hand",
+            "note": "Take off about {leftHelp} on the left and {rightHelp} on the right to hang at {pct}% of your peak. Left hand first, around 7 s a hang. Attempts: take off as little help as you can and stop at the first hang that fails."
           }
-        }
+        },
+        "fingerNote": "The final push. After the repeaters, try the one-arm hang attempts if you can get to the pulley. Finish with one max pull on each hand."
       },
       {
         "n": 8,
@@ -1314,13 +1347,14 @@
         "sessions": {
           "Board": "Day 3: Tension 1 list and a 7b+ attempt, fresh and rested.",
           "Pull": "Day 2: weighted pullups (+35 kg for 3 reps) and a one-arm lock-off hold on each side.",
-          "Weakness": "Pinch block max in the Tindeq app, and sloper rollers at the top weight."
+          "Weakness": "Pinch block max once your block is back, and the timed sloper hang."
         },
         "tests": [
-          "Day 1: Tindeq 20mm peak, left hand first, then one-arm hang attempts. Pinch block max.",
-          "Day 2: weighted pullups and one-arm lock-offs. Sloper rollers.",
+          "Day 1: Tindeq 20mm max pull on each hand, left first, then one-arm hang attempts if you can reach the pulley. Pinch block max if your block is back.",
+          "Day 2: weighted pullups and one-arm lock-offs. The timed sloper hang.",
           "Day 3: Board, Tension 1 and a 7b+ attempt."
-        ]
+        ],
+        "rx": {}
       }
     ],
     "goals": [
@@ -1367,26 +1401,18 @@
         "id": "g-pinch",
         "name": "Pinch strength",
         "metric": "pinch",
-        "why": "One-hand pinch block max on the Tindeq. Retest in week 1 for a clean baseline; the target is 10% above it.",
-        "baseline": {
-          "right": 22.22,
-          "left": 22.26,
-          "date": "2025-06-07"
-        },
+        "why": "One-hand pinch block max on the Tindeq. There is no block right now. The first test after it is back is the baseline, and the target is 10% above it.",
         "targetPct": 10
       },
       {
         "id": "g-sloper",
         "name": "Sloper strength",
-        "metric": "sloper",
-        "why": "Sloper roller weight, the heaviest you logged for a set. Sloper force goes with how well people climb sloper routes.",
-        "baseline": {
-          "load": 25,
-          "date": "2026-11-18"
-        },
-        "target": {
-          "load": 30
-        }
+        "metric": "benchGain",
+        "bench": [
+          "b-sloper"
+        ],
+        "targetPct": 20,
+        "why": "Timed dead hang on the Beastmaker 2000 sloper, same sloper and warm-up each time. Test in week 1 and again in week 8; the target is 20% longer than the first hang."
       },
       {
         "id": "g-t1",
@@ -1451,6 +1477,13 @@
         "unit": "",
         "how": "Log the climb you send. In week 1, put your 2 or 3 candidates in the note.",
         "goal": "g-7b"
+      },
+      {
+        "id": "b-sloper",
+        "name": "Sloper dead hang, Beastmaker 2000",
+        "unit": "s",
+        "how": "Both hands, bodyweight, same sloper and same warm-up each time. Log the longest hold in seconds.",
+        "goal": "g-sloper"
       }
     ]
   },

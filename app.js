@@ -65,8 +65,9 @@ function partsFor(data, key, day) {
   if (!w || !TRAIN.includes(key)) return null;
   const rows = (data.parts || []).filter(p => p.session === key && p.date <= day && diffDays(day, p.date) < 7);
   const ids = new Set(rows.map(p => p.exercise));
-  const done = w.exercises.filter(e => ids.has(e.id));
-  return { total: w.exercises.length, done: done.length, left: w.exercises.filter(e => !ids.has(e.id)), rows };
+  const need = w.exercises.filter(e => !e.optional); // optional exercises can be ticked but are never required
+  const done = need.filter(e => ids.has(e.id));
+  return { total: need.length, done: done.length, left: need.filter(e => !ids.has(e.id)), rows };
 }
 
 function stateAt(data, day) {
@@ -185,7 +186,7 @@ function withCycle(key, e) {
   const w = info.week, rx = (w.rx && w.rx[e.id]) || null, scale = w.scale == null ? 1 : w.scale;
   const patch = {};
   if (rx) for (const k of CYCLE_FIELDS) if (rx[k] !== undefined) patch[k] = rx[k];
-  let note = rx && rx.note ? rx.note : '';
+  let note = rx && rx.note ? fillTokens(state.data, rx.note, rx.pct) : '';
   if (scale !== 1 && patch.sets === undefined && e.sets) {
     patch.sets = Math.max(1, Math.ceil(e.sets * scale));
     if (!note) note = `Deload week: ${patch.sets} ${patch.sets === 1 ? 'set' : 'sets'} instead of ${e.sets}. Keep it easy.`;
@@ -194,20 +195,34 @@ function withCycle(key, e) {
   return { ...e, ...patch, cycleNote: note, cycleWeek: w.n, _base: e };
 }
 
-/* Finger hangs are set as a percentage of the latest 20mm Tindeq peak. */
-function fingerPlan(data, f) {
-  const rows = tests20(data);
-  const last = rows[rows.length - 1], bw = data.athlete.bodyweight;
-  const hand = (name, key) => {
-    const load = last[key] * f.pct / 100, gap = bw - load;
-    return { name, key, load, text: `${name}: ${kg(load)} kg of pull, ` + (gap >= 0 ? `${kg(gap)} kg of help` : `${kg(-gap)} kg of added weight`) };
-  };
-  return {
-    head: `${f.hangs} hangs of ${f.seconds} s at ${f.pct}% of your peak, ${restText(f.rest)} rest`,
-    hands: [hand('Left', 'left'), hand('Right', 'right')],
-    from: last,
-  };
+/* Finger targets are a percentage of the highest of your last three 20mm tests (one bad day cannot drag them down). */
+function refPeak(data) {
+  const rows = tests20(data).slice(-3);
+  if (!rows.length) return null;
+  return { left: Math.max(...rows.map(r => r.left)), right: Math.max(...rows.map(r => r.right)), from: rows[rows.length - 1] };
 }
+/* notes can use {pct} {left} {right} {leftHelp} {rightHelp} {peakLeft} {peakRight}, worked out from the peaks */
+function fillTokens(data, text, pct) {
+  const p = refPeak(data);
+  if (!p || pct == null) return text;
+  const bw = data.athlete.bodyweight;
+  const help = v => { const g = bw - v; return g >= 0 ? `${kg(g)} kg of help` : `${kg(-g)} kg of added weight`; };
+  const vals = { pct: numText(pct), left: kg(p.left * pct / 100), right: kg(p.right * pct / 100),
+    leftHelp: help(p.left * pct / 100), rightHelp: help(p.right * pct / 100), peakLeft: kg(p.left), peakRight: kg(p.right) };
+  return text.replace(/\{(\w+)\}/g, (m, k) => (k in vals ? vals[k] : m));
+}
+/* the week's finger prescription, read from the f-rep and f-oah entries of the cycle week */
+function fingerLines(data, w) {
+  const rep = w.rx && w.rx['f-rep'], oah = w.rx && w.rx['f-oah'], p = refPeak(data);
+  const lines = [];
+  if (rep) {
+    lines.push({ main: `At home, Tindeq repeaters: ${rep.sets} sets of ${rep.reps} at ${numText(rep.pct)}% of your peak`,
+      sub: p ? `Left ${kg(p.left * rep.pct / 100)} kg, right ${kg(p.right * rep.pct / 100)} kg. ${restOf(rep)}` : '' });
+  }
+  if (oah) lines.push({ main: `At the gym, one-arm hangs on the pulley: ${oah.reps}, ${numText(oah.pct)}% of your peak`, sub: p ? fillTokens(data, 'Take off {leftHelp} on the left and {rightHelp} on the right.', oah.pct) : '' });
+  return { lines, from: p && p.from, p, note: w.fingerNote };
+}
+const restOf = r => { const m = /(\d+) s between sets/.exec(r.note || ''); return m ? `${m[1]} s between sets.` : ''; };
 
 /* progress towards each goal, worked out from what is already logged */
 const inCycle = (c, date) => date >= c.start;
@@ -236,22 +251,19 @@ const GOAL_METRICS = {
   },
   pinch(data, c, g) {
     const rows = data.strength.filter(x => x.type === 'Pinch block' && inCycle(c, x.date)).sort((a, b) => a.date.localeCompare(b.date));
+    if (!rows.length) return [{ note: 'No pinch block right now. The first test after it is back is the baseline, and the target is ' + g.targetPct + '% above it.' }];
     return [['Right hand', 's1', 'right'], ['Left hand', 's2', 'left']].map(([label, cls, k]) => {
-      const early = rows.find(x => diffDays(x.date, c.start) < 14);
-      const base = early ? early[k] : g.baseline[k];
-      const target = base * (1 + g.targetPct / 100);
-      const best = rows.length ? Math.max(...rows.map(x => x[k])) : null;
-      return bar({ label, cls, base, now: best, target,
-        text: best == null ? 'No pinch test this cycle yet' : `${kg(best)} kg best this cycle`,
-        baseText: early ? `Start ${kg(base)} kg` : `Start ${kg(base)} kg (${shortDate(toUTC(g.baseline.date), true)}, retest in week 1)`,
-        targetText: `Target ${kg(target)} kg` });
+      const base = rows[0][k], target = base * (1 + g.targetPct / 100), best = Math.max(...rows.map(x => x[k]));
+      return bar({ label, cls, base, now: best, target, text: `${kg(best)} kg best this cycle`,
+        baseText: `Start ${kg(base)} kg (${shortDate(toUTC(rows[0].date), true)})`, targetText: `Target ${kg(target)} kg` });
     });
   },
-  sloper(data, c, g) {
-    const sets = (data.setLog || []).filter(x => x.exercise === 'w-sloper' && x.load != null && inCycle(c, x.date));
-    const top = bestOf(sets, x => x.load);
-    return [bar({ label: 'Sloper roller weight', cls: 'ink', base: g.baseline.load, now: top ? top.load : null, target: g.target.load,
-      text: top ? `${numText(top.load)} kg best this cycle` : 'No sloper sets this cycle yet', baseText: `Start ${g.baseline.load} kg`, targetText: `Target ${g.target.load} kg` })];
+  benchGain(data, c, g) {
+    const got = g.bench.flatMap(id => benchEntries(data, id)).filter(x => inCycle(c, x.date) && x.value != null);
+    if (!got.length) return [{ note: 'No hang logged yet. Test it in week 1; the target is ' + g.targetPct + '% longer than that first hang.' }];
+    const base = got[0].value, target = base * (1 + g.targetPct / 100), best = Math.max(...got.map(x => x.value));
+    return [bar({ label: 'Timed sloper hang', cls: 'ink', base, now: best, target, text: `${numText(best)} s best this cycle`,
+      baseText: `Start ${numText(base)} s (${shortDate(toUTC(got[0].date), true)})`, targetText: `Target ${numText(Math.round(target * 10) / 10)} s` })];
   },
   list(data, c, g) {
     const l = data.lists.find(x => x.id === g.list);
@@ -385,7 +397,7 @@ function renderToday() {
     const bits = [r.st.since == null ? 'Not logged yet' : `Last done ${sinceText(r.st.since)}`];
     if (p && p.done) bits.push(k === 'done' && r.st.count7 < r.st.target ? 'every part ticked off' : `${p.done} of ${p.total} parts ticked off`);
     if (r.mates.length) bits.push(`Same day as ${r.mates.join(' and ')}`);
-    if (r.t === 'Finger' && cinfo && cinfo.kind === 'active' && cinfo.week.finger) { const f = cinfo.week.finger; bits.push(`This week: ${f.hangs} × ${f.seconds} s at ${f.pct}% of peak`); }
+    if (r.t === 'Finger' && cinfo && cinfo.kind === 'active' && cinfo.week.rx && cinfo.week.rx['f-rep']) { const f = cinfo.week.rx['f-rep']; bits.push(`This week: ${f.sets} × ${parseInt(f.reps, 10)} repeaters at ${numText(f.pct)}% of peak`); }
     const hasW = data.workouts && data.workouts[r.t];
     const open = () => go('plan', true, r.t, 'today');
     queue.append(h('li', hasW ? { class: 'tap', role: 'button', tabindex: '0', 'aria-label': `${r.t}. Open the workout`, onclick: open,
@@ -882,6 +894,7 @@ function goalCard(data, c, g, today) {
   const bars = GOAL_METRICS[g.metric] ? GOAL_METRICS[g.metric](data, c, g) : [];
   const card = h('div', { class: 'card goal' }, h('h3', {}, g.name));
   for (const b of bars) {
+    if (b.note) { card.append(h('p', { class: 'sub gnote' }, b.note)); continue; }
     card.append(h('div', { class: 'gbar' },
       h('div', { class: 'row' }, h('span', {}, b.label), h('b', {}, b.reached ? 'Reached' : `${Math.round(b.frac * 100)}%`)),
       h('div', { class: 'meter', role: 'img', 'aria-label': `${b.label}: ${Math.round(b.frac * 100)}% of the way from the start to the target` },
@@ -924,12 +937,17 @@ function renderCycle() {
   if (!here && info.kind === 'active') sec.append(h('button', { type: 'button', class: 'btn quiet cy-back', onclick: () => { cycleSel = null; mount(); } }, 'Back to this week'));
   sec.append(h('p', { class: 'cy-aim' }, w.aim), h('p', { class: 'sub' }, c.phases[w.phase] || ''));
   const sess = h('ul', { class: 'cy-sess' });
-  if (w.finger) {
-    const fp = fingerPlan(data, w.finger);
-    sess.append(h('li', {}, h('b', {}, 'Finger'), h('span', { class: 'cy-main' }, fp.head),
-      ...fp.hands.map(x => h('span', { class: 'cy-line' }, x.text)),
-      h('span', { class: 'cy-line muted' }, `Worked out from your ${fmt(fp.from.date)} peaks (left ${kg(fp.from.left)}, right ${kg(fp.from.right)} kg). A new test changes these.`),
-      w.finger.note ? h('span', { class: 'cy-line' }, w.finger.note) : null));
+  const fl = fingerLines(data, w);
+  if (fl.lines.length || fl.note) {
+    const finger = data.workouts && data.workouts.Finger;
+    const openF = () => go('plan', true, 'Finger', 'cycle');
+    sess.append(h('li', finger ? { class: 'tap', role: 'button', tabindex: '0', 'aria-label': 'Finger: open the workout', onclick: openF,
+        onkeydown: e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openF(); } } } : {},
+      h('b', {}, 'Finger'),
+      ...fl.lines.flatMap(x => [h('span', { class: 'cy-main' }, x.main), x.sub ? h('span', { class: 'cy-line' }, x.sub) : null]),
+      fl.note ? h('span', { class: 'cy-line' }, fl.note) : null,
+      fl.p ? h('span', { class: 'cy-line muted' }, `Worked out from the highest of your last three tests (left ${kg(fl.p.left)}, right ${kg(fl.p.right)} kg). A new max pull changes these.`) : null,
+      finger ? h('span', { class: 'cy-line open' }, 'Open the workout') : null));
   }
   for (const key of ['Board', 'Pull', 'Weakness']) {
     const txt = w.sessions && w.sessions[key];
@@ -1203,12 +1221,18 @@ function trackPanel(key, e) {
   };
   const startVal = (d, k) => draft ? (draft[d] == null ? '' : draft[d]) : (last && last[k] != null ? String(last[k]) : planned(k));
   const wIn = h('input', { type: 'number', inputmode: 'decimal', min: '0', max: '200', step: '0.5', placeholder: 'e.g. 10', value: startVal('load', 'load') });
+  /* one-arm work is logged per hand, left first */
+  const hands = e.hands && e.hands.length ? e.hands : null;
+  let hand = hands ? (draft && draft.hand && hands.includes(draft.hand) ? draft.hand : (last && last.hand && hands.includes(last.hand) ? (hands[(hands.indexOf(last.hand) + 1) % hands.length]) : hands[0])) : null;
+  const handBox = hands ? h('div', { class: 'chips hand', role: 'group', 'aria-label': 'Hand' }, hands.map(x => h('button', { type: 'button', class: 'chip', 'aria-pressed': String(x === hand), onclick: ev => {
+    hand = x; handBox.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.textContent === hand))); keep();
+  } }, x))) : null;
   const sIn = repsMode ? null : h('input', { type: 'number', inputmode: 'numeric', min: '1', max: '3600', step: '1', placeholder: 'e.g. 60', value: startVal('seconds', 'seconds') });
   const rIn = repsMode ? h('input', { type: 'number', inputmode: 'numeric', min: '1', max: '100', step: '1', placeholder: 'e.g. 5', value: startVal('reps', 'reps') }) : null;
   const err = h('p', { class: 'err', role: 'alert' });
   err.hidden = true;
   const fail = msg => { err.textContent = msg; err.hidden = false; };
-  const keep = () => { err.hidden = true; store(draftKey, JSON.stringify({ load: wIn.value, seconds: sIn ? sIn.value : '', reps: rIn ? rIn.value : '' })); };
+  const keep = () => { err.hidden = true; store(draftKey, JSON.stringify({ load: wIn.value, seconds: sIn ? sIn.value : '', reps: rIn ? rIn.value : '', hand })); };
   for (const i of [wIn, sIn, rIn]) if (i) i.addEventListener('input', keep);
   const num = i => (!i || i.value.trim() === '') ? null : Number(i.value);
   const read = () => ({ load: num(wIn), seconds: num(sIn), reps: num(rIn) });
@@ -1229,19 +1253,19 @@ function trackPanel(key, e) {
     store(draftKey, '');
     if (e.sets) store(setsKey(today, e.id), String(Math.min(setsDone(today, e) + 1, e.sets)));
     Log.submit([{ id: opId(), op: 'addSetLog', at: localISO(),
-      entry: { date: today, session: key, exercise: e.id, name: e.name, load, seconds: seconds == null ? null : Math.round(seconds), ...(repsMode ? { reps } : {}) } }]);
+      entry: { date: today, session: key, exercise: e.id, name: e.name, load, seconds: seconds == null ? null : Math.round(seconds), ...(repsMode ? { reps } : {}), ...(hand ? { hand } : {}) } }]);
   } }, 'Save this set');
 
   /* today's sets are numbered in the order you did them */
   const todayIds = rows.filter(x => x.date === today).map(x => x.id).reverse();
   const setNo = x => todayIds.includes(x.id) ? `Set ${todayIds.indexOf(x.id) + 1}: ` : '';
   const what = x => {
-    const w = x.load != null ? kgText(x.load) : null;
+    const w = x.load != null ? (e.loadLabel ? `${kgText(x.load)} of help` : kgText(x.load)) : null;
     const r = x.reps != null ? (w ? `× ${x.reps}` : `${x.reps} reps`) : null;
     return [[w, r].filter(Boolean).join(' '), x.seconds != null ? `${x.seconds} s` : null].filter(Boolean).join(', ');
   };
   const item = x => h('li', {},
-    h('span', { class: 'rt' }, setNo(x) + what(x)),
+    h('span', { class: 'rt' }, setNo(x) + (x.hand ? `${x.hand}: ` : '') + what(x)),
     h('span', { class: 'rm' }, fmt(x.date)),
     Log.confirmButton('Remove', 'Tap again to remove', () => Log.submit([{ id: opId(), op: 'deleteSetLog', at: localISO(), target: x.id }])));
   const hist = h('div', { class: 'tlog' });
@@ -1251,8 +1275,9 @@ function trackPanel(key, e) {
     if (rows.length > 5) hist.append(h('details', { class: 'fold' }, h('summary', {}, `Earlier sets (${rows.length - 5})`), h('ul', { class: 'recent' }, rows.slice(5).map(item))));
   }
   return h('div', { class: 'track' },
+    handBox,
     h('div', { class: 'pair' },
-      h('label', { class: 'f' }, h('span', { class: 'f-l' }, 'Weight (kg)'), wIn),
+      h('label', { class: 'f' }, h('span', { class: 'f-l' }, e.loadLabel || 'Weight (kg)'), wIn),
       repsMode
         ? h('label', { class: 'f' }, h('span', { class: 'f-l' }, 'Reps'), rIn)
         : h('label', { class: 'f' }, h('span', { class: 'f-l' }, 'Time (seconds)'), sIn)),
@@ -1296,6 +1321,7 @@ function exerciseBody(key, e, parent, part) {
     out.push(dots, count);
   }
   if (e.track) out.push(trackPanel(key, e));
+  if (e.action === 'tindeq-test') out.push(h('button', { type: 'button', class: 'btn block', onclick: () => Log.testSheet({ today }) }, 'Add the Tindeq test'));
   const timers = e.timers && e.timers.length ? e.timers : (e.hold ? [{ label: 'Hold', s: e.hold, work: true }] : []);
   if (e.hold == null && 'hold' in e) out.push(h('p', { class: 'load' }, 'Hold time: not set yet'));
   if (timers.length) {

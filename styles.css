@@ -410,3 +410,5 @@ details.why > p { font-size: 14px; color: var(--ink-2); max-width: 60ch; }
 .cyc { margin-top: 10px; padding: 10px 12px; border-radius: 12px; background: var(--wash); font-size: 14px; }
 .cyc-line { margin-top: 8px; font-size: 14px; color: var(--ink-2); }
 .cyc-line b { color: var(--ink); }
+
+.track .chips.hand { margin-bottom: 12px; }
