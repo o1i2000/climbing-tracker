@@ -638,7 +638,7 @@
       "text": "Rotator cuff rows and I Y T (Pull day) plus face pulls and Y's to I's (Weakness day) add up to about 18 sets of cuff and rear-delt work. Keep them on different days. The app warns you if you tick or log both on the same day."
     }
   ],
-  "rev": 42,
+  "rev": 43,
   "workouts": {
     "Weakness": {
       "title": "Weakness session",
@@ -1108,7 +1108,7 @@
     "start": "2026-11-23",
     "intro": "Seven weeks, then a benchmark week. Weeks 1 to 4 build, week 5 is a deload, weeks 6 and 7 push hardest, and week 8 repeats the tests from the start. The finger work leads: Tindeq repeaters at home (one-arm hangs on a pulley when you can get to the gym), then one max pull. Pull work continues alongside. Pinch and sloper goals start once you have the kit.",
     "phases": {
-      "Build": "Steady progression. Controlled hangs, clean reps, and weights that go up only when the last session was clean.",
+      "Build": "Steady progression. Controlled pulls, clean reps, and weights that go up only when the last session was clean.",
       "Deload": "About half the sets, lighter weights and no hard tries. Fingers and shoulders catch up, so the next block is stronger.",
       "Intensify": "Fewer, heavier efforts after the deload. Shorter sessions, longer rests, and one-arm attempts in week 7.",
       "Benchmarks": "Rested retests of everything that was measured at the start. Then the plan changes."
@@ -1117,12 +1117,12 @@
       {
         "n": 1,
         "phase": "Build",
-        "title": "Baseline and settle in",
-        "aim": "Get the starting numbers down and learn the loads. Everything should feel controlled.",
+        "title": "A steady first week",
+        "aim": "A normal week, a touch lighter on the fingers. There is no test week: your starting numbers are already logged from 20 Nov (Tindeq peaks, weighted pullups, Tension 1). Only add the few baselines you are missing when you are next at the kit.",
         "sessions": {
           "Board": "Pick 2 or 3 Tension 7b+ candidates for the benchmark and give each a go. On Tension 1, work the 7a and 7a+ climbs. Log the tries.",
-          "Pull": "Weighted pullups, then rotator cuff rows and I Y T. Record a one-arm lock-off hold on each side as a baseline.",
-          "Weakness": "Heel hook raises, ring face pulls, open hand drag and Y's to I's. Pinch lifts and sloper rollers wait until you have the kit. Do the timed sloper hang once as a baseline."
+          "Pull": "Weighted pullups first, then rotator cuff rows and I Y T. Optional baseline, if your shoulders are happy: after the pullups, hold a one-arm lock-off on each side and log the seconds. Skip it if it bothers your shoulders; the weighted pullups are the main measure.",
+          "Weakness": "Heel hook raises, ring face pulls, open hand drag and Y's to I's. Pinch lifts and sloper rollers wait until you have the kit. When you are next at the Beastmaker, do the timed sloper hang once as a baseline."
         },
         "rx": {
           "p-pullups": {
@@ -1144,7 +1144,7 @@
             "note": "Take off about {leftHelp} on the left and {rightHelp} on the right to hang at {pct}% of your peak. Left hand first, around 7 s a hang."
           }
         },
-        "fingerNote": "Finish with one max pull on each hand, left first. It sets next week's targets."
+        "fingerNote": "One Finger session this week, on any day (your 20 Nov session counts until the 26th, so Fri 27 Nov is fine). Your 20 Nov max pull is the baseline, so there is no extra test."
       },
       {
         "n": 2,
