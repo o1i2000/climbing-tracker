@@ -217,7 +217,7 @@ function fingerLines(data, w) {
   const lines = [];
   if (rep) {
     lines.push({ main: `At home, Tindeq repeaters: ${rep.sets} sets of ${rep.reps} at ${numText(rep.pct)}% of your peak`,
-      sub: p ? `Left ${kg(p.left * rep.pct / 100)} kg, right ${kg(p.right * rep.pct / 100)} kg. ${restOf(rep)}` : '' });
+      sub: p ? `One hand at a time: left ${kg(p.left * rep.pct / 100)} kg, then right ${kg(p.right * rep.pct / 100)} kg. ${restOf(rep)}` : '' });
   }
   if (oah) lines.push({ main: `At the gym, one-arm hangs on the pulley: ${oah.reps}, ${numText(oah.pct)}% of your peak`, sub: p ? fillTokens(data, 'Take off {leftHelp} on the left and {rightHelp} on the right.', oah.pct) : '' });
   return { lines, from: p && p.from, p, note: w.fingerNote };

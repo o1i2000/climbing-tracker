@@ -111,7 +111,7 @@ sheet have the same scroll width as the screen.
 - `benchmarks[]` are results typed in by hand (hold times in seconds, or the name of a climb). Each result is a row in `benchLog` (`id`, `date`, `bench`, `value`, `note`), added with the `addBench` op and removed with `deleteBench`.
 
 ## Finger workout
-`workouts.Finger` mirrors how the finger session is actually done: "Finger work: pick one" is either Tindeq repeaters at home (`f-rep`: 4 sets of 5 reps, 4 s on, 4 s off, 200 s between sets) or one-arm hangs on the gym pulley (`f-oah`), then "One max pull" (`f-max`, `action: "tindeq-test"` adds a button that opens the Tindeq test sheet). The max pull is saved as a normal 20mm test, which is what sets the next targets.
+`workouts.Finger` mirrors how the finger session is actually done: "Finger work: pick one" is either Tindeq repeaters at home (`f-rep`: 4 sets of 5 reps, 3 s on, 4 s off, one hand at a time with 20 s between hands, 200 s between sets, which matches the "20mm training" routine in the Tindeq app and stands in for pick-ups) or one-arm hangs on the gym pulley (`f-oah`), then "One max pull" (`f-max`, `action: "tindeq-test"` adds a button that opens the Tindeq test sheet). The max pull is saved as a normal 20mm test, which is what sets the next targets.
 
 - `track: true` with `hands: ["Left", "Right"]` logs each hang with the hand (left first; the next hang defaults to the other hand), and `loadLabel` renames the weight box, here "Help from the pulley (kg)". Hangs are saved as `setLog` rows with a `hand` field.
 - `optional: true` on an exercise means it can be ticked but never has to be: pinch lifts and sloper rollers are optional while there is no kit, so Weakness is done once the other four are ticked.
