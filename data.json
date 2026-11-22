@@ -123,6 +123,14 @@
       "readiness": 5,
       "details": "",
       "id": "omwp210r2286ki"
+    },
+    {
+      "date": "2026-11-22",
+      "type": "Climb",
+      "title": "1 hard v7 1 sloper v6",
+      "readiness": 4,
+      "details": "Felt tired",
+      "id": "omws5fu7xvhgh2"
     }
   ],
   "lists": [
@@ -736,7 +744,7 @@
       "text": "Rotator cuff rows and I Y T (Pull day) plus face pulls and Y's to I's (Weakness day) add up to about 18 sets of cuff and rear-delt work. Keep them on different days. The app warns you if you tick or log both on the same day."
     }
   ],
-  "rev": 49,
+  "rev": 50,
   "workouts": {
     "Weakness": {
       "title": "Weakness session",
