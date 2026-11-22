@@ -200,18 +200,18 @@ function toast(msg) {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => t.classList.remove('show'), 5200);
 }
-function report(r) {
-  if (r.ok) return toast('Saved. Your other devices update in about a minute.');
+function report(r, saved) {
+  if (r.ok) return toast(saved || 'Saved. Your other devices update in about a minute.');
   if (r.kind === 'notoken') return toast('Saved on this phone only. Add a GitHub token in Plan to upload it.');
   if (r.kind === 'network') return toast('Saved on this phone. It uploads when you are back online.');
   if (r.kind === 'auth') return toast('GitHub refused to save. Check the token in Plan. Your change is kept on this phone.');
   return toast('Could not upload yet. Your change is kept on this phone and will retry.');
 }
-async function submit(ops) {
+async function submit(ops, saved) {
   setPending([...pending(), ...ops]);
   emit();
   const r = await flush();
-  report(r);
+  report(r, saved);
   return r;
 }
 function init() {

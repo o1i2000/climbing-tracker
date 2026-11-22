@@ -70,6 +70,30 @@ function partsFor(data, key, day) {
   return { total: need.length, done: done.length, left: need.filter(e => !ids.has(e.id)), rows };
 }
 
+/* When the last required exercise of a workout is done, the workout is logged as a session for that day, so there is
+   nothing left to log by hand. These sessions carry auto: true, which lets Undo take them back. */
+function autoSessionOp(data, key, day) {
+  const picked = data.workouts[key].exercises.filter(x => x.variants).map(x => chosenVariant(key, x).name);
+  return { id: opId(), op: 'addSession', at: localISO(), session: {
+    date: day, type: key, title: picked.length === 1 ? picked[0] : key, readiness: getReadiness(day), details: '', auto: true } };
+}
+/* Stretching has no weekly ticks: it is done when every stretch is finished today. Undoing one takes an automatic session back. */
+function autoDayOps(key) {
+  const { data, today } = state, w = data.workouts[key];
+  const all = w.exercises.every(x => isFinished(today, x));
+  const mine = data.sessions.filter(x => x.type === key && x.date === today);
+  if (all && !mine.length) return [autoSessionOp(data, key, today)];
+  const auto = mine.find(x => x.auto);
+  if (!all && auto) return [{ id: opId(), op: 'deleteSession', at: localISO(), target: auto.id }];
+  return [];
+}
+function syncAuto(key, extra = []) {
+  const ops = [...extra, ...autoDayOps(key)];
+  if (!ops.length) return;
+  const added = ops.some(o => o.op === 'addSession'), removed = ops.some(o => o.op === 'deleteSession');
+  Log.submit(ops, added ? `All done. ${key} is logged as a session for today.` : removed ? `Undone. The automatic ${key} session is removed too.` : undefined);
+}
+
 function stateAt(data, day) {
   const out = {};
   for (const t of TYPES) {
@@ -1038,11 +1062,12 @@ const finKey = (day, id) => `fin:${day}:${id}`;
 const setsDone = (day, e) => Math.min(Number(store(setsKey(day, e.id))) || 0, e.sets || 0);
 const isFinished = (day, e) => (e.sets ? setsDone(day, e) >= e.sets : store(finKey(day, e.id)) === '1');
 
-function finishControl(e) {
+function finishControl(e, key) {
   const { today } = state;
   const set = on => {
     if (e.sets) store(setsKey(today, e.id), String(on ? e.sets : 0));
     else store(finKey(today, e.id), on ? '1' : '');
+    syncAuto(key);
     mount();
   };
   if (isFinished(today, e)) {
@@ -1059,10 +1084,23 @@ function partControl(key, e, detail) {
   if (hits.length) {
     return h('div', { class: 'part done' },
       h('span', { class: 'part-label' }, ringIcon('done', 22), `Ticked off ${fmt(hits[0].date)}`),
-      h('button', { type: 'button', class: 'btn quiet', onclick: () => Log.submit(hits.map(x => ({ id: opId(), op: 'deletePart', at: localISO(), target: x.id }))) }, 'Undo'));
+      h('button', { type: 'button', class: 'btn quiet', onclick: () => {
+        const ops = hits.map(x => ({ id: opId(), op: 'deletePart', at: localISO(), target: x.id }));
+        /* taking back a required tick means the week is no longer complete, so an automatic session goes too */
+        const auto = e.optional ? null : data.sessions.filter(x => x.type === key && x.auto && x.date <= today && diffDays(today, x.date) < 7).sort((a, b) => b.date.localeCompare(a.date))[0];
+        if (auto) ops.push({ id: opId(), op: 'deleteSession', at: localISO(), target: auto.id });
+        Log.submit(ops, auto ? `Undone. The automatic ${key} session is removed too.` : undefined);
+      } }, 'Undo'));
   }
-  const tick = () => Log.submit([{ id: opId(), op: 'addPart', at: localISO(),
-    part: { date: today, session: key, exercise: e.id, name: shortName(e.name), detail: detail() || undefined } }]);
+  const tick = () => {
+    const ops = [{ id: opId(), op: 'addPart', at: localISO(),
+      part: { date: today, session: key, exercise: e.id, name: shortName(e.name), detail: detail() || undefined } }];
+    /* the last required exercise logs the workout as a session for today, unless this week already has one */
+    const pr = partsFor(data, key, today);
+    const completes = pr && !e.optional && pr.total > 0 && pr.left.length === 1 && pr.left[0].id === e.id;
+    if (completes && stateAt(data, today)[key].count7 < (data.targets[key] || 1)) ops.push(autoSessionOp(data, key, today));
+    Log.submit(ops, ops.length > 1 ? `Ticked off. ${key} is logged as a session for today.` : undefined);
+  };
   return h('div', { class: 'part' }, h('button', { type: 'button', class: 'btn', onclick: () => {
     const hits = Log.clashFor(data, today, { session: key, exercise: e.id });
     if (hits.length) Log.warnSheet({ hits, day: today, confirmLabel: 'Tick it off anyway', onConfirm: tick });
@@ -1252,8 +1290,9 @@ function trackPanel(key, e) {
     if (reps != null && !(Number.isInteger(reps) && reps >= 1 && reps <= 100)) { fail('The reps must be a whole number from 1 to 100.'); rIn.focus(); return; }
     store(draftKey, '');
     if (e.sets) store(setsKey(today, e.id), String(Math.min(setsDone(today, e) + 1, e.sets)));
-    Log.submit([{ id: opId(), op: 'addSetLog', at: localISO(),
-      entry: { date: today, session: key, exercise: e.id, name: e.name, load, seconds: seconds == null ? null : Math.round(seconds), ...(repsMode ? { reps } : {}), ...(hand ? { hand } : {}) } }]);
+    const logOp = { id: opId(), op: 'addSetLog', at: localISO(),
+      entry: { date: today, session: key, exercise: e.id, name: e.name, load, seconds: seconds == null ? null : Math.round(seconds), ...(repsMode ? { reps } : {}), ...(hand ? { hand } : {}) } };
+    if (TRAIN.includes(key)) Log.submit([logOp]); else syncAuto(key, [logOp]);
   } }, 'Save this set');
 
   /* today's sets are numbered in the order you did them */
@@ -1308,7 +1347,7 @@ function exerciseBody(key, e, parent, part) {
     for (let i = 0; i < e.sets; i++) {
       const apply = () => {
         done = done === i + 1 ? i : i + 1; store(doneKey, String(done)); draw();
-        if (!TRAIN.includes(key) && !parent) mount();
+        if (!TRAIN.includes(key) && !parent) { syncAuto(key); mount(); }
       };
       dots.append(h('button', { type: 'button', role: 'checkbox', 'aria-label': `${unit} ${i + 1} of ${e.sets}`, onclick: () => {
         /* the first set of an exercise is the moment to warn, before the rest of its sets are done */
@@ -1360,7 +1399,7 @@ function exerciseCard(key, e, n) {
   const fin = !ticks && isFinished(state.today, e);
   const li = h('li', { class: fin ? 'ex finished' : 'ex' });
   li.append(h('div', { class: 'ex-head' }, h('span', { class: 'ex-n', 'aria-hidden': 'true' }, fin ? '✓' : String(n)), h('h3', {}, e.name, fin ? h('span', { class: 'sr' }, ' (done today)') : null)));
-  if (!e.variants) { const ec = withCycle(key, e); li.append(...exerciseBody(key, ec, null, ticks ? partControl(key, e, () => null) : finishControl(ec))); return li; }
+  if (!e.variants) { const ec = withCycle(key, e); li.append(...exerciseBody(key, ec, null, ticks ? partControl(key, e, () => null) : finishControl(ec, key))); return li; }
   const last = lastVariant(key, e);
   const body = h('div', { class: 'variant-body' });
   const row = h('div', { class: 'chips', role: 'radiogroup', 'aria-label': 'Choose one for today' });
@@ -1392,6 +1431,7 @@ function renderWorkout(key) {
   root.append(h('button', { type: 'button', class: 'back', onclick: () => go(backTo, true) },
     s('svg', { viewBox: '0 0 24 24', width: 20, height: 20, 'aria-hidden': 'true' }, s('path', { d: 'M15 5l-7 7 7 7', fill: 'none', stroke: 'currentColor', 'stroke-width': 2.4, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' })), backTo === 'today' ? 'Today' : backTo === 'cycle' ? 'Cycle' : 'Plan'));
   const pr = partsFor(data, key, today);
+  const loggedWeek = data.sessions.filter(x => x.type === key && x.date <= today && diffDays(today, x.date) < 7).sort((a, b) => b.date.localeCompare(a.date))[0];
   let todayLine = null;
   if (!TRAIN.includes(key)) {
     const n = w.exercises.filter(x => isFinished(today, x)).length, total = w.exercises.length;
@@ -1399,12 +1439,13 @@ function renderWorkout(key) {
     const noun = key === 'Stretching' ? 'stretches' : 'exercises';
     const logged = data.sessions.some(x => x.type === key && x.date === today);
     todayLine = h('div', {},
-      h('p', { class: 'progress' }, `Today: ${n} of ${total} ${noun} done.` + (n === total && !logged ? ' Log the session below so it counts for the week.' : '') + (logged ? ' Session logged.' : '')),
+      h('p', { class: 'progress' }, `Today: ${n} of ${total} ${noun} done.` + (logged ? ' Session logged.' : '')),
       wk ? h('p', { class: 'sub', style: 'margin-top:4px' }, `This week: ${wk.count7} of ${wk.target} ${key.toLowerCase()} sessions logged.`) : null);
   }
   root.append(h('section', { class: 'section tight' }, h('h2', {}, w.title), w.intro ? h('p', { class: 'sub' }, w.intro) : null, todayLine,
     cycleLine(key),
-    pr && pr.done ? h('p', { class: 'progress' }, `This week: ${pr.done} of ${pr.total} exercises ticked off.` + (pr.done === pr.total ? ` That counts as a full ${key} session for the week.` : '')) : null));
+    pr && pr.done ? h('p', { class: 'progress' }, `This week: ${pr.done} of ${pr.total} exercises ticked off.` + (pr.done === pr.total
+      ? (loggedWeek ? ` Logged as a session on ${fmt(loggedWeek.date)}.` : ` That counts as a full ${key} session for the week.`) : '')) : null));
   const list = h('ol', { class: 'workout' });
   w.exercises.forEach((e, i) => list.append(exerciseCard(key, e, i + 1)));
   root.append(list);
