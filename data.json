@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-24",
+  "updated": "2026-11-26",
   "athlete": {
     "bodyweight": 71,
     "goal": "One-arm hang on the 20mm"
@@ -768,7 +768,7 @@
       "text": "Rotator cuff rows and I Y T (Pull day) plus face pulls and Y's to I's (Weakness day) add up to about 18 sets of cuff and rear-delt work. Keep them on different days. The app warns you if you tick or log both on the same day."
     }
   ],
-  "rev": 55,
+  "rev": 56,
   "workouts": {
     "Weakness": {
       "title": "Weakness session",
@@ -944,8 +944,8 @@
         {
           "id": "s-wide",
           "name": "Wide leg hip raises over bottle",
-          "sets": null,
-          "reps": null,
+          "sets": 3,
+          "reps": "10 each side",
           "unit": "set",
           "load": null,
           "how": "Sit on the floor with your legs wide apart and your back straight. Put a bottle on the floor beside one foot. Keeping that knee straight, lift the leg off the floor, over the bottle and back down. Do both sides.",
