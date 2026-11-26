@@ -768,7 +768,7 @@
       "text": "Rotator cuff rows and I Y T (Pull day) plus face pulls and Y's to I's (Weakness day) add up to about 18 sets of cuff and rear-delt work. Keep them on different days. The app warns you if you tick or log both on the same day."
     }
   ],
-  "rev": 60,
+  "rev": 61,
   "workouts": {
     "Weakness": {
       "title": "Weakness session",
@@ -1005,7 +1005,7 @@
           "load": null,
           "how": "Step one foot forward into a lunge and lower the back knee to the floor. Squeeze the back glute and tuck your pelvis, then shift your hips slightly forward until the front of the back hip stretches. Do not arch your lower back. Do both sides.",
           "timers": [],
-          "hold": 50
+          "hold": 35
         },
         {
           "id": "s-squat",
