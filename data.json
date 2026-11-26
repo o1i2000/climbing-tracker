@@ -768,7 +768,7 @@
       "text": "Rotator cuff rows and I Y T (Pull day) plus face pulls and Y's to I's (Weakness day) add up to about 18 sets of cuff and rear-delt work. Keep them on different days. The app warns you if you tick or log both on the same day."
     }
   ],
-  "rev": 68,
+  "rev": 69,
   "workouts": {
     "Weakness": {
       "title": "Weakness session",
@@ -1252,6 +1252,33 @@
       "load": 10,
       "seconds": null,
       "id": "omwxd2idcrarrs"
+    },
+    {
+      "date": "2026-11-26",
+      "session": "Stretching",
+      "exercise": "s-pancake",
+      "name": "Standing weighted pancake",
+      "load": 10,
+      "seconds": null,
+      "id": "omwxd2j2b6eqbm"
+    },
+    {
+      "date": "2026-11-26",
+      "session": "Stretching",
+      "exercise": "s-pancake",
+      "name": "Standing weighted pancake",
+      "load": 10,
+      "seconds": null,
+      "id": "omwxd2jo0ox6yv"
+    },
+    {
+      "date": "2026-11-26",
+      "session": "Stretching",
+      "exercise": "s-pancake",
+      "name": "Standing weighted pancake",
+      "load": 10,
+      "seconds": null,
+      "id": "omwxd8ilw9kgz8"
     }
   ],
   "clashes": [
