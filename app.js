@@ -363,6 +363,59 @@ function cycleCard(data, today) {
     strip);
 }
 
+/* The first day a greyed-out session is available again, if nothing else is logged. */
+function nextFree(data, t, today) {
+  for (let i = 1; i <= 14; i++) {
+    const day = addDays(today, i), st = stateAt(data, day);
+    const k = t === 'Stretching' ? (st.Stretching.count7 < st.Stretching.target ? 'go' : 'done') : statusFor(t, st, day).kind;
+    if (k === 'go') return day;
+  }
+  return null;
+}
+const fingerDose = (data, day) => {
+  const ci = cycleInfo(data, day), f = ci && ci.kind === 'active' && ci.week.rx && ci.week.rx['f-rep'];
+  return f ? `${f.sets} × ${parseInt(f.reps, 10)} repeaters at ${numText(f.pct)}% of peak` : null;
+};
+/* What the app would suggest on the days after the card at the top, if each suggestion is followed. The first row is always
+   the next day, even when it is a rest day; after that only days with a session are listed. */
+function outlook(data, today, rec) {
+  const start = rec.trainedToday ? addDays(today, 1) : today;
+  const sim = { ...data, sessions: [...data.sessions] };
+  const rows = [];
+  for (let i = 0; i <= 10 && rows.length < 4; i++) {
+    const day = addDays(start, i);
+    const fresh = recommend(sim, day, null), tired = recommend(sim, day, 1);
+    if (i > 0 && (fresh.picks.length || !rows.length)) rows.push({ day, fresh, tired });
+    for (const t of (i === 0 ? rec.picks : fresh.picks)) sim.sessions.push({ date: day, type: t, title: t, readiness: null, details: '', id: `sim-${day}-${t}` });
+  }
+  return rows;
+}
+function comingUp(data, today, rec) {
+  const rows = outlook(data, today, rec);
+  if (!rows.length) return null;
+  const tomorrow = addDays(today, 1);
+  const list = h('ul', { class: 'queue ahead' });
+  for (const r of rows) {
+    const picks = r.fresh.picks, bits = [];
+    if (r.day === tomorrow) bits.push(`${fmt(r.day)}.`);
+    if (picks.length) {
+      bits.push(r.fresh.why);
+      if (picks.includes('Finger')) { const d = fingerDose(data, r.day); if (d) bits.push(`That week: ${d}.`); }
+      const alt = r.tired.picks.filter(t => !picks.includes(t));
+      if (alt.length) bits.push(`Feeling rough? ${alt.join(' or ')} instead.`);
+    } else {
+      const next = rows.find(x => x.fresh.picks.length);
+      bits.push(next ? `Nothing is free yet. ${next.fresh.title} ${next.fresh.picks.length > 1 ? 'are' : 'is'} free on ${fmt(next.day)}.` : 'Nothing else is free in the next 10 days.');
+    }
+    list.append(h('li', {},
+      h('span', { class: 'ico' }, ringIcon(picks.length ? 'go' : 'rest', 26)),
+      h('span', { class: 'name' }, picks.length ? r.fresh.title : 'Rest or stretch'),
+      h('span', { class: `state ${picks.length ? 'go' : 'wait'}` }, r.day === tomorrow ? 'Tomorrow' : fmt(r.day)),
+      h('span', { class: 'since' }, bits.join(' '))));
+  }
+  return section('Coming up', 'What the app suggests on the next days if you follow each suggestion. It updates as you log things.', list);
+}
+
 function renderToday() {
   const { data, today } = state;
   const readiness = getReadiness(today);
@@ -420,8 +473,9 @@ function renderToday() {
     const p = r.st.parts;
     const bits = [r.st.since == null ? 'Not logged yet' : `Last done ${sinceText(r.st.since)}`];
     if (p && p.done) bits.push(k === 'done' && r.st.count7 < r.st.target ? 'every part ticked off' : `${p.done} of ${p.total} parts ticked off`);
+    if (k === 'done') { const free = nextFree(data, r.t, today); if (free) bits.splice(1, 0, `Free again ${fmt(free)}`); }
     if (r.mates.length) bits.push(`Same day as ${r.mates.join(' and ')}`);
-    if (r.t === 'Finger' && cinfo && cinfo.kind === 'active' && cinfo.week.rx && cinfo.week.rx['f-rep']) { const f = cinfo.week.rx['f-rep']; bits.push(`This week: ${f.sets} × ${parseInt(f.reps, 10)} repeaters at ${numText(f.pct)}% of peak`); }
+    if (r.t === 'Finger' && cinfo && cinfo.kind === 'active') { const d = fingerDose(data, today); if (d) bits.push(`This week: ${d}`); }
     const hasW = data.workouts && data.workouts[r.t];
     const open = () => go('plan', true, r.t, 'today');
     queue.append(h('li', hasW ? { class: 'tap', role: 'button', tabindex: '0', 'aria-label': `${r.t}. Open the workout`, onclick: open,
@@ -434,6 +488,8 @@ function renderToday() {
   }
   const shared = groupsOf(data).filter(g => g.length > 1).map(g => `${g.join(' and ')} share a day.`).join(' ');
   root.append(section('This week', `Finger and Board need two days between them. ${shared} A week is the last 7 days. Tap a session to open its workout. In Pull and Weakness you can tick off single exercises.`.replace('  ', ' '), queue));
+  const ahead = comingUp(data, today, rec);
+  if (ahead) root.append(ahead);
 
   // recent activity (sessions and single exercises), newest first
   const items = [

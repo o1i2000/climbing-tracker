@@ -77,6 +77,14 @@ parts). The Edit sheet changes sets, reps, weight and the description of any exe
 (seconds or null) also gets a Hold field and a timer button once it is set. The weighted pancake uses `track: true`,
 so it has editable weight and time with a history of previous sets.
 
+## Coming up (Today tab)
+Greyed-out rows in This week say when they are free again (`nextFree`: the first day `statusFor` returns go, if nothing
+else is logged). Under it, Coming up (`outlook`) runs `recommend` forward day by day, adding each suggestion to a copy of
+the sessions so the next day sees it. The first row is always the next day, even if it is a rest day; after that only days
+with a session are listed, up to four rows over 10 days. Each row also gives the rough-day alternative (`recommend` with a
+readiness of 1) and, for Finger, that week's repeater dose from the cycle. It is only a projection: logging something
+different changes it straight away.
+
 ## Ticking a stretch today
 On a Stretching exercise, `Mark done` (or the set dots when `sets` is set) ticks it for today. These ticks live in the
 browser under `done:<date>:<id>` and `fin:<date>:<id>`, so they reset on their own each day. The header shows

@@ -1,5 +1,5 @@
 /* Network first, so new data shows up as soon as there is signal; falls back to the last copy offline. */
-const CACHE = 'climbing-log-v5';
+const CACHE = 'climbing-log-v6';
 const SHELL = ['./', 'index.html', 'styles.css', 'app.js', 'log.js', 'data.json', 'manifest.webmanifest', 'icons/icon.svg', 'icons/icon-192.png'];
 
 self.addEventListener('install', e => {

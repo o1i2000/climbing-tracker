@@ -89,6 +89,7 @@ button { font: inherit; color: inherit; }
 .queue .state.wait { color: var(--ink); }
 .queue .state.done { color: var(--ink-2); }
 .queue .since { font-size: 13px; color: var(--ink-2); }
+.queue.ahead li .since { grid-column: 2 / -1; }
 .queue .dots { font-size: 13px; letter-spacing: 0.08em; text-align: right; color: var(--ink-2); }
 
 /* figures: open numbers on the page */
