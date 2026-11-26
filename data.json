@@ -768,7 +768,7 @@
       "text": "Rotator cuff rows and I Y T (Pull day) plus face pulls and Y's to I's (Weakness day) add up to about 18 sets of cuff and rear-delt work. Keep them on different days. The app warns you if you tick or log both on the same day."
     }
   ],
-  "rev": 59,
+  "rev": 60,
   "workouts": {
     "Weakness": {
       "title": "Weakness session",
@@ -983,7 +983,7 @@
           "load": null,
           "how": "Straighten one arm in front of you. With your other hand, gently bend that wrist so your fingers point down and hold, then bend it so your fingers point up and hold. Keep the elbow straight and stop short of pain. Do both arms.",
           "timers": [],
-          "hold": 30
+          "hold": 50
         },
         {
           "id": "s-straight",
