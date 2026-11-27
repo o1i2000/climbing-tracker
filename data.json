@@ -679,6 +679,16 @@
       "body": null,
       "note": "",
       "id": "t-20mm-2026-11-20T11:44"
+    },
+    {
+      "date": "2026-11-27",
+      "time": "12:09",
+      "type": "20mm half crimp",
+      "right": 63.19,
+      "left": 57.8,
+      "body": null,
+      "note": "",
+      "id": "t-20mm-2026-11-27T12:09"
     }
   ],
   "plan": [
@@ -785,7 +795,7 @@
       "text": "Rotator cuff rows and I Y T (Pull day) plus face pulls and Y's to I's (Weakness day) add up to about 18 sets of cuff and rear-delt work. Keep them on different days. The app warns you if you tick or log both on the same day."
     }
   ],
-  "rev": 71,
+  "rev": 72,
   "workouts": {
     "Weakness": {
       "title": "Weakness session",
